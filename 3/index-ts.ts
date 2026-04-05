@@ -1,5 +1,15 @@
-class MyBCD {
 
+function decomposeBCD(num, len) {
+    for (let i = 0; i < len; i++) {
+        const mask = 0b1111 << i * 4; // Очень простая операция
+        console.log((num & mask) >> i * 4); // Очень простая операция
+    }
+}
+// Кодируем 5421 в BCD 8421
+const bcd5421 = 5 << 12 | 4 << 8 | 2 << 4 | 1;
+decomposeBCD(bcd5421, 4 /* Сколько цифр в нашем числе */);
+
+class MyBCD {
     num: number
     is8Array: Uint8Array
 
