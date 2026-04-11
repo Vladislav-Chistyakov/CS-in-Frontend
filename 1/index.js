@@ -1,4 +1,6 @@
 const coder = {
+' ': 0b000000,
+'\n': 0b000001,
 'а': 0b000010,
 'б': 0b000011,
 'в': 0b000100,
@@ -68,6 +70,9 @@ const MyEncoding = {
   sizeArray: 0,
   arr: new Uint8Array(this.sizeArray),
   arrayOfParsedCharacters: [],
+  afterBuffer: 0,
+  sizeBitsInOneSymb: 6,
+  sizeBitsInOneByte: 8,
   parseString (string) {
     this.arrayOfParsedCharacters = []
     let beforeUseShiftSimbol = false
@@ -129,25 +134,25 @@ const MyEncoding = {
     // то есть сохранить оставшиеся биты
 
     // Основная функция
-    let buffer = 8
+    let buffer = this.sizeBitsInOneByte
     for (let indexSimb = 0, indexByte = 0; indexSimb < arrayToWork.length; indexSimb++) {
       // Записываем символ
       let simb = arrayToWork[indexSimb]
       const codeSimb = coder[simb]
 
-      if (buffer >= 6) {
-        buffer = buffer - 6
+      if (buffer >= this.sizeBitsInOneSymb) {
+        buffer = buffer - this.sizeBitsInOneSymb
         if (buffer >= 2) {
           this.arr[indexByte] = codeSimb << buffer
         } else {
           this.arr[indexByte] = this.arr[indexByte] | codeSimb
           indexByte++
-          buffer = 8
+          buffer = this.sizeBitsInOneByte
         }
       } else  {
         // то сколько у нас останется места в следующем байте
-        const remainingBits = 6 - buffer
-        const freeBitsInNextByte = 8 - remainingBits
+        const remainingBits = this.sizeBitsInOneSymb - buffer
+        const freeBitsInNextByte = this.sizeBitsInOneByte - remainingBits
         // а значит нам оставшиеся символы не нужны, мы их заберем
         // и добавим в байт который у нас не дозаполнен
         const draft = codeSimb >>> remainingBits
@@ -161,18 +166,60 @@ const MyEncoding = {
         buffer = freeBitsInNextByte
       }
     }
+    this.afterBuffer = buffer
     return this.arr
   },
-  parseUintArray (array) {
-    const arr = array
+  searchCharacter (codeCharacter) {
+    for (const [character, code] of Object.entries(coder)) {
+      if (code === codeCharacter) {
+        return character
+      }
+    }
+  },
+  parseUintArray(array) {
+    const parsArr = []
+
+    let buffer = 0
+    let bitCount = 0
+
+    for (let i = 0; i < array.length; i++) {
+      const byte = array[i]
+
+      buffer = (buffer << 8) | byte
+      bitCount += 8
+
+      while (bitCount >= 6 && parsArr.length < this.arrayOfParsedCharacters.length) {
+        const shift = bitCount - 6
+        const code = (buffer >>> shift) & 0b111111
+
+        const simb = this.searchCharacter(code)
+        
+        parsArr.push(simb)
+
+        bitCount -= 6
+        buffer = buffer & ((1 << bitCount) - 1)
+      }
+    }
+    return parsArr
   },
   decode() {
-    const arrayCharacters = parseUintArray(this.arr)
-    console.log("arrayCharacters", arrayCharacters)
+    const arrayCharacters = this.parseUintArray(this.arr)
+    const decodeString = []
+    let useCaps = false
+    for (let i = 0; i < arrayCharacters.length; i++) {
+      if (arrayCharacters[i] === 'SHIFT') {
+        useCaps = true
+      } else if (useCaps) {
+        decodeString.push(arrayCharacters[i].toUpperCase())
+        useCaps = false
+      } else {
+        decodeString.push(arrayCharacters[i])
+      }
+    }
+    return decodeString.join('')
   }
 }
 
-const bytes = MyEncoding.encode("АААбббБА123..."); // Uint8Array
-console.log('RESULT = ', bytes)
-// const t = 1
-// t.toLoverCase()
+const bytes = MyEncoding.encode("абВгжв"); 
+console.log(bytes)
+console.log(MyEncoding.decode())
