@@ -163,8 +163,12 @@ const MyEncoding = {
     }
     return this.arr
   },
+  parseUintArray (array) {
+    const arr = array
+  },
   decode() {
-    
+    const arrayCharacters = parseUintArray(this.arr)
+    console.log("arrayCharacters", arrayCharacters)
   }
 }
 
