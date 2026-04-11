@@ -55,67 +55,120 @@ const coder = {
 ')': 0b110111,
 '"': 0b111000,
 '\t': 0b111001,
-'CAPS': 0b111010,
+'SHIFT': 0b111010,
 }
 
 const toStr = (b) => b.toString(2)
 
 const MyEncoding = {
   str: '',
-  createSizeArray () {
-    return Math.ceil(this.str.length * 6 / 8)
+  createSizeArray (arrayCharacters) {
+    return Math.ceil(arrayCharacters.length * 6 / 8)
   },
   sizeArray: 0,
   arr: new Uint8Array(this.sizeArray),
+  arrayOfParsedCharacters: [],
+  parseString (string) {
+    this.arrayOfParsedCharacters = []
+    let beforeUseShiftSimbol = false
+    let useShiftNow = false
+
+    function doesThisSymbolInTable (simb) {
+      if (beforeUseShiftSimbol) {
+        return true
+      } else if (coder[simb] !== undefined) {
+        return true
+      } else if (isShift(simb)) {
+        beforeUseShiftSimbol = true
+        return true
+      }
+      console.error('Error, такой симбол отстутсвует', simb)
+      return false
+    }
+
+    function isShift (simb) {
+      try {
+        const loverTextSimb = simb.toLowerCase()
+        if (coder[loverTextSimb] !== undefined) {
+          useShiftNow = true
+          return true
+        }
+        return false
+      } catch (e) {
+        console.error('E', e)
+        return false
+      }
+    }
+
+    for (let index = 0; index < string.length; index++) {
+      if (doesThisSymbolInTable(string[index])) {
+        if (useShiftNow) {
+          this.arrayOfParsedCharacters.push('SHIFT')
+          this.arrayOfParsedCharacters.push(string[index].toLowerCase())
+          beforeUseShiftSimbol = false
+          useShiftNow = false
+        } else {
+          this.arrayOfParsedCharacters.push(string[index])
+        }
+      }
+    }
+    return this.arrayOfParsedCharacters
+  },
   encode(string) {
-    // записали строку
-    this.str = string
-    console.log(this.str)
+    // Получаем распасренную строку в виде массива символво
+    const arrayToWork = this.parseString(string)
+    console.log('arrayToWork - ', arrayToWork)
 
     // узнали сколько элементов будет у нас в массиве
-    this.sizeArray = this.createSizeArray()
+    this.sizeArray = this.createSizeArray(arrayToWork)
     // создали массив Uint8Array
     this.arr = new Uint8Array(this.sizeArray)
 
     // тут я буду считать количество битов
     // которое мне надо будет дописать в следующий байт
     // то есть сохранить оставшиеся биты
-    let buffer = 0
-    for (let indexSimb = 0, indexByte = 0; indexSimb < this.str.length; indexSimb++) {
-      const simb = this.str[indexSimb]
+
+    // Основная функция
+    let buffer = 8
+    for (let indexSimb = 0, indexByte = 0; indexSimb < arrayToWork.length; indexSimb++) {
+      // Записываем символ
+      let simb = arrayToWork[indexSimb]
       const codeSimb = coder[simb]
-      console.log('\nbuffer', buffer)
-      console.log('indexSimb', indexSimb, simb)
-      console.log('indexByte', indexByte)
-      if (buffer === 0) {
-        this.arr[indexByte] = codeSimb << 2
-        buffer = 2
-        continue
-      }
-      if (buffer === 2) {
-        // получаем второй символ
+
+      if (buffer >= 6) {
+        buffer = buffer - 6
+        if (buffer >= 2) {
+          this.arr[indexByte] = codeSimb << buffer
+        } else {
+          this.arr[indexByte] = this.arr[indexByte] | codeSimb
+          indexByte++
+          buffer = 8
+        }
+      } else  {
         // то сколько у нас останется места в следующем байте
-        const smeshenieSimbNaDlinuOstatka = 6 - buffer
+        const remainingBits = 6 - buffer
+        const freeBitsInNextByte = 8 - remainingBits
         // а значит нам оставшиеся символы не нужны, мы их заберем
         // и добавим в байт который у нас не дозаполнен
-        const draft = codeSimb >>> smeshenieSimbNaDlinuOstatka
+        const draft = codeSimb >>> remainingBits
 
         this.arr[indexByte] = this.arr[indexByte] | draft
         indexByte++
-        // 000011 << срезаем 2  = 001100 -> потом приводим в Uint 001100  -> потом срезаем новое на 2 0011
+        
         // следующее срезанное число
-        const toDraft = ((codeSimb << 2) >>> 0) >>> 2
-        this.arr[indexByte] = toDraft
-        continue
+        const toDraft = ((codeSimb << buffer) >>> 0) >>> buffer
+        this.arr[indexByte] = toDraft << freeBitsInNextByte
+        buffer = freeBitsInNextByte
       }
     }
     return this.arr
   },
-  decode() {}
+  decode() {
+    
+  }
 }
 
-const bytes = MyEncoding.encode("аб"); // Uint8Array
-console.log('bytes ', bytes)
-console.log('test ', toStr(coder['б'] >>> 0) )
-// console.log(MyEncoding.decode(bytes)); // "Какая-то строка!"
-// TЗ - надо придумать как в одной итерации записать символ и считать буффер
+const bytes = MyEncoding.encode("АААбббБА123..."); // Uint8Array
+console.log('RESULT = ', bytes)
+// const t = 1
+// t.toLoverCase()
