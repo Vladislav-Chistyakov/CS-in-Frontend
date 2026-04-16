@@ -75,7 +75,20 @@ class FlatPixelStream implements PixelStream {
   }
 }
 
-const newClass = new FlatPixelStream(2, 2)
+
+// for (let i = 0; i < 3; i++) {
+//   stream.forEach(TraverseMode.RowMajor, () => {})
+// }
+
+// benchmark('FlatPixelStream  RowMajor', () => stream.forEach(TraverseMode.RowMajor, () => {}))
+
+// benchmark('FlatPixelStream  RowMajor', () => stream.forEach(TraverseMode.RowMajor, () => {}))
+
+// for (let i = 0; i < 3; i++) {
+//   stream.forEach(TraverseMode.ColMajor, () => {})
+// }
+
+// benchmark('FlatPixelStream  ColMajor', () => stream.forEach(TraverseMode.ColMajor, () => {}))
 
 function getRandomInt(min: number, max: number, isInt: boolean = true): number {
   return isInt ? Math.floor(Math.random() * (max - min)) + min : Number((Math.random() * (max - min)).toFixed(1))
@@ -94,7 +107,6 @@ class ArrayOfArraysPixelStream implements PixelStream {
     this.width = width
     this.height = height
     this.data = this.createArrayOfArraysRGBA(width, height)
-    console.log('data ', this.data)
   }
 
   createArrayOfArraysRGBA (width: number, height: number): Array<Array<RGBA>> {
@@ -179,7 +191,6 @@ class ArrayOfObjectPixelStream implements PixelStream {
     this.width = width
     this.height = height
     this.data = this.createArrayOfObjectRGBA(width, height)
-    console.log('data ', this.data,)
   }
 
   createArrayOfObjectRGBA (width: number, height: number): Array<{r: number, g: number, b: number, a: number}> {
@@ -312,17 +323,42 @@ class typedArray implements PixelStream {
   }
 }
 
-const newTypedArray = new typedArray(2, 2)
-console.log('get ', newTypedArray.getPixel(1, 1))
+function benchmark(name: string, fn: () => void) {
+  const start = performance.now()
+  fn()
+  const end = performance.now()
+  console.log(name, (end - start).toFixed(2), 'ms')
+}
 
-console.log('set ', newTypedArray.setPixel(1, 1, [30, 30, 30, 1]))
 
-newTypedArray.forEach(TraverseMode.RowMajor, (rgba, x, y) => {
-    console.log('forEach row ', x, y, rgba)
-})
+const num = 5000
+const stream = new typedArray(num, num)
 
-newTypedArray.forEach(TraverseMode.ColMajor, (rgba ,x, y) => {
-  console.log('forEach col ', x, y, rgba)
-})
+// // прогрев
+// for (let i = 0; i < 3; i++) {
+//   stream.forEach(TraverseMode.ColMajor, () => {})
+// }
+
+// несколько замеров
+for (let i = 0; i < 5; i++) {
+  benchmark('ColMajor ' + num, () =>
+    stream.forEach(TraverseMode.ColMajor, () => {})
+  )
+}
+
+// const newTypedArray = new typedArray(2, 2)
+// console.log('get ', newTypedArray.getPixel(1, 1))
+
+// console.log('set ', newTypedArray.setPixel(1, 1, [30, 30, 30, 1]))
+
+// newTypedArray.forEach(TraverseMode.RowMajor, (rgba, x, y) => {
+//     console.log('forEach row ', x, y, rgba)
+// })
+
+// newTypedArray.forEach(TraverseMode.ColMajor, (rgba ,x, y) => {
+//   console.log('forEach col ', x, y, rgba)
+// })
 
 // ------------ TypedArray --------------- //
+
+
