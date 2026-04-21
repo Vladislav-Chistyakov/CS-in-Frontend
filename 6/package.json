@@ -4,7 +4,8 @@
   "description": "> Цель задания: понять, как **представление данных в памяти** и **паттерн доступа** влияют на производительность.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "npx ts-node index.ts"
   },
   "keywords": [],
   "author": "",
