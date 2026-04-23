@@ -1,7 +1,7 @@
 const numbersCheckArray = [10, 100, 1_000, 10_000, 100_000]
 
-function progrev(size: number, fn: () => void) {
-  for (let i = 0; i < size; i++) {
+function warnUpJIT(fn: () => void) {
+  for (let i = 0; i < 10000; i++) {
     fn()
   }
 }
@@ -13,50 +13,67 @@ enum Methods {
   "UNSHIFT",
 }
 
-function rabota(arr: any[], size: number, method: Methods, which: "С дырками" | "Без дырок") {
-  const myArray = [...arr]
+function measure(arr: any[], size: number, method: Methods) {
+  const JITArray = [...arr]
+  const arrayForWork = [...arr]
   const chooseMethod = (method: Methods) => {
     switch (method) {
       case Methods.POP: {
-        return () => myArray.pop();
+        return (array: any[]) => array.pop();
       }
       case Methods.PUSH: {
-        return () => myArray.push(0);
+        return (array: any[]) => array.push(0);
       }
       case Methods.SHIFT: {
-        return () => myArray.shift();
+        return (array: any[]) => array.shift();
       }
       case Methods.UNSHIFT: {
-        return () => myArray.unshift();
+        return (array: any[]) => array.unshift(0);
       }
     }
   }
   const callBack = chooseMethod(method)
-  // console.log('TEST CALLBACK', callBack())
-  // return
 
-  progrev(size, callBack)
+  warnUpJIT(() => callBack(JITArray))
 
   const randReadStart = performance.now();
 
   for (let i = 0; i < size; i++) {
-    callBack()
+    callBack(arrayForWork)
   }
-  const randReadTime = performance.now() - randReadStart;
-  console.log(`Время затраченное на отработку функции ${Methods[method]}`, randReadTime.toFixed(2), `размер `, size, ` тип - ${which}`);
-}
 
+  return performance.now() - randReadStart;
+}
 
 function check(method: Methods) {
   for (const size of numbersCheckArray) {
     // Массив с дырками
-    rabota(new Array(size), size, method, "С дырками")
+    let ms = 0
+    for (let i = 0; i < 10; i++) {
+      ms+= measure(new Array(size), size, method)
+    }
+    const time = (ms / 10).toFixed(2)
+    console.log(`Размер массива ${size} - массив без дырок`)
+    console.log(`Среднее время работы функции ${Methods[method]}`, time, '\n')
   }
 
   for (const size of numbersCheckArray) {
     // Массив без дырок
-    rabota(new Array(size).fill(0), size, method, "Без дырок")
+    let ms = 0
+    for (let i = 0; i < 10; i++) {
+      ms+= measure(new Array(size).fill(0), size, method)
+    }
+    const time = (ms / 10).toFixed(2)
+    console.log(`Размер массива ${size} - массив с дырками`)
+    console.log(`Среднее время работы функции ${Methods[method]}`, time, '\n')
   }
 }
 
+
 check(Methods.POP)
+
+check(Methods.PUSH)
+
+check(Methods.SHIFT)
+
+check(Methods.UNSHIFT)
