@@ -1,11 +1,10 @@
-import {Struct} from './struct.js'
+import { Struct } from './struct.js';
 
 export function Tuple(...types) {
-  const schema = types.reduce((acc, type, i) => {
+  const scheme = types.reduce((acc, type, i) => {
     acc[i] = type;
-    return acc
-  }, {})
+    return acc;
+  }, {});
 
-  console.log('Tuple schema =  ', schema)
-  return new Struct(schema)
+  return new Struct(scheme);
 }

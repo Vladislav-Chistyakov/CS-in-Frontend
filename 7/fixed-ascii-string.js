@@ -1,11 +1,10 @@
 export const FixedAsciiString = (maxLength) => {
   return {
     get byteLength() {
-      return maxLength
+      return maxLength;
     },
 
     init(buffer, offset) {
-      // ASCII String
       const arr = new Uint8Array(buffer, offset);
 
       return {
@@ -14,20 +13,21 @@ export const FixedAsciiString = (maxLength) => {
 
           for (const charCode of arr) {
             if (charCode === 0) {
-              break
+              break;
             }
 
-            str += String.fromCharCode(charCode)
+            str += String.fromCharCode(charCode);
           }
 
           return str;
         },
+
         set(str) {
           for (let i = 0; i < maxLength; i++) {
             arr[i] = i >= str.length ? 0 : str.charCodeAt(i);
           }
         }
-      }
+      };
     }
-  }
+  };
 }
