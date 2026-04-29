@@ -136,6 +136,10 @@ function encodeStrings(strings) {
 function decodeStrings(buffer) {
   // TODO: пройтись по всем элементам
 }
+
+buffer = просто массив байтов
+offset = твой курсор
+
 Стратегия выполнения
 Реализовать encodeStrings
 Реализовать decodeStrings
