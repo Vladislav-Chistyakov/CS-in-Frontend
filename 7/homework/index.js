@@ -196,10 +196,115 @@ class OneCoderString {
     }
 }
 
-const strings = ['hello', 'kill', '', 'world', 'lol']
-const buffer = new OneCoderString(strings)
-const myString = buffer.at(2)
-console.log("RESULT ", myString, myString === '')
+// const strings = ['hello', 'kill', '', 'world', 'lol']
+// const buffer = new OneCoderString(strings)
+// const myString = buffer.at(2)
+// console.log("RESULT ", myString, myString === '')
+//
+// const bufferInArray = buffer.buffer()
+// console.log("decode ", buffer.decode(bufferInArray))
 
-const bufferInArray = buffer.buffer()
-console.log("decode ", buffer.decode(bufferInArray))
+
+
+class TwoCoderString {
+    BUFFER
+    VIEW
+
+    // выравнивание
+    addOffset(offset) {
+        if (offset % 4) {
+            const test = 4 - (offset % 4)
+            return offset + test
+        }
+        return offset
+    }
+
+    constructor (strings) {
+        // создаем область памяти, через ArrayBuffer - количество 1024 байта
+        this.BUFFER = new ArrayBuffer(1024)
+        let offset = 0
+
+        // Наше представление области памяти
+        // с помощью DataView мы можем менять наши данные и смотреть на них
+        this.VIEW = new DataView(this.BUFFER)
+        
+        // Создаем encoder для кодирования строк 
+        const encoder = new TextEncoder();
+
+        // Запускаем цикл по количеству строк
+        for (let i = 0; i < strings.length; i++) {
+            // Кодирование строки в Uint8Array
+            const stringInBites = encoder.encode(strings[i]);
+
+            // Создаем переменную в которую мы записываем количество занимаемых бит строкой
+            const countBitesForString = new Uint32Array([stringInBites.length])
+
+            // Записываем данные countBitesForString в нашу память
+            this.VIEW.setUint32(offset, countBitesForString[0], true)
+
+            // Делаем отступ
+            offset += 4
+            
+            const pointerInString = new Uint32Array([0])
+
+            this.VIEW.setUint32(offset, pointerInString[0], true)
+
+            offset += 4
+        }
+
+        let doubleOffset = 4
+        // TODO Закодировать строку в формате
+        //     [len][pointer]
+        //     [len][pointer]
+        //     [len][pointer]
+        //     [string]
+        //     [string]
+        //     [string]
+        // for (let i = 0; i < strings.length; i++) {
+        //     const stringInBites = encoder.encode(strings[i]);
+        //     const pointerInString = new Uint32Array([offset])
+        //
+        //     this.VIEW.setUint32(doubleOffset, pointerInString[0], true)
+        //    
+        //
+        //     // Проверка на пустую строку
+        //     if (this.VIEW.getUint32(doubleOffset - 4, true) === 0) {
+        //         // Так мы показываем что строка пустая, пропускаем 8 бит
+        //         // Пустая область в нашей памяти будет говорить нам,
+        //         // что строка пустая
+        //         offset += 4
+        //         continue
+        //     }
+        //
+        //     // И через цикл записываем наши данные в память по 1 биту
+        //     for (const char of stringInBites) {
+        //         this.VIEW.setUint8(offset, char)
+        //         // после каждой записи делаем отступ
+        //         offset += 1
+        //     }
+        //
+        //     offset = this.addOffset(offset)
+        //
+        //     doubleOffset += 8
+        // }
+        // Мы обрезаем наш Buffer на количество затраченного на него памяти
+        // Пустая память нам не нужна
+        this.BUFFER = this.BUFFER.slice(0, offset)
+        //Обновляем наш VIEW
+        this.VIEW = new DataView(this.BUFFER)
+    }
+
+    // Просто возвращаем нашу память
+    buffer () {
+        return this.BUFFER
+    }
+}
+
+const strings = ['hello', 'kill', '', 'world', 'lol']
+const buffer = new TwoCoderString(strings)
+// const myString = buffer.at(2)
+console.log("RESULT ", buffer.BUFFER)
+
+// const bufferInArray = buffer.buffer()
+// console.log("decode ", buffer.decode(bufferInArray))
+
