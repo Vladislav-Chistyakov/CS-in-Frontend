@@ -9,11 +9,11 @@
 // [num - длина строки в байтах]
 // [хранение самой строки в Uint8Array]
 
-class MeByteCoder {
-    COUNT
+class OneCoderString {
+    NUMBER_OF_LINES
     BUFFER
     VIEW
-    
+
     // выравнивание
     addOffset(offset) {
         if (offset % 4) {
@@ -24,97 +24,182 @@ class MeByteCoder {
     }
 
     constructor (strings) {
-        // создаем область памяти, через ArrayBuffer - количество 256 байта
+        // создаем область памяти, через ArrayBuffer - количество 1024 байта
         this.BUFFER = new ArrayBuffer(1024)
         let offset = 0
-        
-        // Создание count количество строк
-        this.COUNT = new Uint32Array(1)
-        this.COUNT[0] = strings.length
-        
-        console.log('THIS COUNT', this.COUNT, this.COUNT[0])
-        // Наше представление области памяти
-        // с помощью DataView мы можем менять наши данные и смотреть их
-        this.VIEW = new DataView(this.BUFFER)
-        // пример записи данных в область памяти
-        this.VIEW.setUint32(offset, this.COUNT[0], true)
-        // порибавляем 4 к offset потому что записали count
-        offset += 4
-        console.log('VIEW ', this.VIEW)
-        
-        
-        
-        // пример вызова данных из области памяти
-        // const checkNumber = this.VIEW.getUint32(0, true)
 
-        const encoder = new TextEncoder();
+        // Записываем количество строк
+        this.NUMBER_OF_LINES = new Uint32Array([strings.length])
+
+        // Наше представление области памяти
+        // с помощью DataView мы можем менять наши данные и смотреть на них
+        this.VIEW = new DataView(this.BUFFER)
         
-        for (let i = 0; i < this.COUNT[0]; i++) {
-            const bytes = encoder.encode(strings[i]);
-            console.log('TDO bytes', bytes.length, bytes)
-            // const countBytesForString = bytes.length
-            if (bytes.length === 0) {
-                offset += 8
+        // пример записи данных в область памяти
+        this.VIEW.setUint32(offset, this.NUMBER_OF_LINES[0], true)
+        
+        // Делаем отступ в 4 байта,
+        // потому как записали первым элеметном количество строк
+        offset += 4
+
+        // Создаем encoder для кодирования строк 
+        const encoder = new TextEncoder();
+
+        // Запускаем цикл по количеству строк
+        for (let i = 0; i < this.NUMBER_OF_LINES[0]; i++) {
+            // Кодирование строки в Uint8Array
+            const stringInBites = encoder.encode(strings[i]);
+
+
+            // Создаем переменную в которую мы записываем количество занимаемых бит строкой
+            const countBitesForString = new Uint32Array([stringInBites.length])
+
+            // Записываем данные countBitesForString в нашу память
+            this.VIEW.setUint32(offset, countBitesForString[0], true)
+
+            // Делаем отступ
+            offset += 4
+            
+            // Проверка на пустую строку
+            if (stringInBites.length === 0) {
+                // Так мы показываем что строка пустая, пропускаем 8 бит
+                // Пустая область в нашей памяти будет говорить нам,
+                // что строка пустая
+                offset += 4
                 continue
             }
-            const countBytesForString = new Uint32Array(1)
-            countBytesForString[0] = bytes.length
-            console.log('THIS TEST', countBytesForString, countBytesForString[0])
-            this.VIEW.setUint32(offset, countBytesForString[0], true)
-            offset += 4
-            console.log('BYTEST ', bytes, bytes.length)
-            for (let simb of bytes) {
-                this.VIEW.setUint8(offset, simb)
+            
+            // И через цикл записываем наши данные в память по 1 биту
+            for (const char of stringInBites) {
+                this.VIEW.setUint8(offset, char)
+                // после каждой записи делаем отступ
                 offset += 1
             }
 
+            // Для того, чтобы у нас не путалось местоположение строк и других данных в памяти
+            // Мы делаем выравнивание, чтобы данные были четко разбиты в своих секторах
+            // Иначе будет очень сложно узнать где и что лежит в памяти
             offset = this.addOffset(offset)
+            
         }
+        // Мы обрезаем наш Buffer на количество затраченного на него памяти
+        // Пустая память нам не нужна
         this.BUFFER = this.BUFFER.slice(0, offset)
+        
+        //Обновляем наш VIEW
         this.VIEW = new DataView(this.BUFFER)
-        
-        console.log('buff ', this.BUFFER)
-
-        // const bytes = encoder.encode(str);
-        // console.log('TDO bytes', bytes.length, bytes)
-        // this.VIEW.setUint32(0, bytes, true)
-        
-        // console.log('bytes', bytes);
-        // const checkString = decoder.decode(bytes);
-        // console.log('checkString ', checkString)
     }
 
+    // Достаем элемент по интексу
     at (number) {
         const BYTE_IN_32 = 4
         const decoder = new TextDecoder();
-        
-        const countStrings = this.VIEW.getUint32(this.BUFFER[0], true)
-        const schet = number < 0 ? countStrings + number  : number
-        console.log('countStrings and schet', countStrings, schet)
 
+        // Достаем наше количество строк
+        const countStrings = this.VIEW.getUint32(this.BUFFER[0], true)
+        
+        // Тут мы решаем вопрос по отрицательному индексу искать или по тому который передали
+        const desiredElementIndex = number < 0 ? countStrings + number : number
+
+        // Мы отрезаем 1 элемент из памяти, там хранилась только количество строк в массиве
         const buffer = this.BUFFER.slice(BYTE_IN_32)
+        
+        // Создаем новывй view из полученного buffer
         const view = new DataView(buffer)
+
+        // Наш счетчик
+        let offset = 0
         
-        let count = 0
-        
+        console.log('this.VIEW', this.VIEW)
+
+        // Идем шагами по нашей памяти
         for (let step = 0; step < countStrings; step++) {
-            const firstCount = view.getUint32(count, true)
-            count += BYTE_IN_32
-            if (step === schet) {
-                const resultString = buffer.slice(count, count + firstCount)
+            // Получаем количество символов в строке
+            const numberOfCharactersPerLine = view.getUint32(offset, true)
+            // передвигаемся на 4 байта после этого
+            offset += BYTE_IN_32
+            
+            // мы нашли нужный элемент
+            if (step === desiredElementIndex) {
+                // мы вырезаем его из памяти, это закодированный Uint8Array
+                const resultString = buffer.slice(offset, offset + numberOfCharactersPerLine)
+                // Декодируем и выводим результат
                 return decoder.decode(resultString);
-            } else if (firstCount === 0) {
-                count += BYTE_IN_32
+                // Если у нас строка состоит из 0 элементов
+            } else if (numberOfCharactersPerLine === 0) {
+                // То двигаемся дальше на + 4
+                offset += BYTE_IN_32
             } else {
-                count += firstCount
+                // Если мы попали не строку которая нас не интересует
+                // то добавляем к передвижению ее длину
+                offset += numberOfCharactersPerLine
             }
-            count = this.addOffset(count)
+            // Делаем выравнивание после всех операций
+            offset = this.addOffset(offset)
         }
+        // Если элемента по полученному индексу не существует
+        // то выводим undefined
         return undefined
+    }
+    
+    // Просто возвращаем нашу память
+    buffer () {
+        return this.BUFFER
+    }
+    
+    // Декодируем буфер
+    decode (decodeBuffer) {
+        const BYTE_IN_32 = 4
+        const decoder = new TextDecoder();
+
+        
+        // Создаем новый view из полученного буфера
+        let view = new DataView(decodeBuffer)
+
+        // Достаем количество строк в буффере
+        const countStrings = view.getUint32(decodeBuffer[0], true)
+        
+        // Обрезаем
+        const buffer = decodeBuffer.slice(BYTE_IN_32)
+        
+        // Создаем новый view из обрезанного
+        view = new DataView(buffer)
+
+        // Наш счетчик
+        let offset = 0
+        
+        const arrayString = []
+
+        // Идем шагами по памяти
+        for (let step = 0; step < countStrings; step++) {
+            // Получаем количество символов в строке
+            const numberOfCharactersPerLine = view.getUint32(offset, true)
+            // передвигаемся на 4 байта после этого
+            offset += BYTE_IN_32
+            
+            // Если строка не имеет символов, это пустая строка
+            if (numberOfCharactersPerLine === 0) {
+                arrayString.push('')
+                offset += BYTE_IN_32
+            } else {
+                // Декодируем и добавляем строку в массив
+                const resultString = buffer.slice(offset, offset + numberOfCharactersPerLine)
+                arrayString.push(decoder.decode(resultString))
+                offset += numberOfCharactersPerLine
+            }
+            
+            // Делаем выравнивание
+            offset = this.addOffset(offset)
+        }
+        // Отдаем массив
+        return arrayString
     }
 }
 
 const strings = ['hello', 'kill', '', 'world', 'lol']
-const buffer = new MeByteCoder(strings)
-const myString = buffer.at(-3)
+const buffer = new OneCoderString(strings)
+const myString = buffer.at(2)
 console.log("RESULT ", myString, myString === '')
+
+const bufferInArray = buffer.buffer()
+console.log("decode ", buffer.decode(bufferInArray))

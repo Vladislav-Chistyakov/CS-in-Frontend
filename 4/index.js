@@ -6,8 +6,8 @@ function cyclicLeftShift (num, positionLeft) {
   return (num >>> (32 - position)) | (num << position)
 }
 
-function cyclicRigthShift (num, positionRigth) {
-  let position = positionRigth % 32
+function cyclicRightShift (num, positionRight) {
+  let position = positionRight % 32
   if (position === 0 ) {
     return num
   }
