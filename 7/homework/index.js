@@ -109,8 +109,6 @@ class OneCoderString {
     // Наш счетчик
     let offset = 0
 
-    console.log('this.VIEW', this.VIEW)
-
     // Идем шагами по нашей памяти
     for (let step = 0; step < countStrings; step++) {
       // Получаем количество символов в строке
@@ -206,6 +204,7 @@ class OneCoderString {
 class TwoCoderString {
   BUFFER
   VIEW
+  POINTER_ON_FIRST_STRING
 
   // выравнивание
   addOffset(offset) {
@@ -247,6 +246,11 @@ class TwoCoderString {
       // записать offset для строки
       const pointerInString = new Uint32Array([startingOffsetForString])
       this.VIEW.setUint32(offset, pointerInString[0], true)
+
+      if (i === 0) {
+        this.POINTER_ON_FIRST_STRING = pointerInString[0]
+      }
+
       offset += 4
 
       if (stringInBites.length === 0) {
@@ -311,12 +315,31 @@ class TwoCoderString {
 
     return stringsArray
   }
+
+  at(number) {
+    const decoder = new TextDecoder();
+
+    const indexOnPointerString = new Array(this.POINTER_ON_FIRST_STRING / 8).fill(0)
+    const indexOnCountChars = new Array(this.POINTER_ON_FIRST_STRING / 8).fill(0)
+    for (let pointer = 0, i = 0; pointer < this.POINTER_ON_FIRST_STRING; i++) {
+      indexOnCountChars[i] = this.VIEW.getUint32(pointer, true)
+      pointer += 4
+      indexOnPointerString[i] = this.VIEW.getUint32(pointer, true)
+      pointer += 4
+    }
+
+    const desiredElementIndex = number < 0 ? indexOnPointerString.length + number : number
+
+    const resultString = this.BUFFER.slice(indexOnPointerString[desiredElementIndex], indexOnPointerString[desiredElementIndex] + indexOnCountChars[desiredElementIndex])
+
+    return  decoder.decode(resultString)
+  }
 }
 
 const strings = ['hello', 'kill', '', 'world', 'lol']
 const buffer = new TwoCoderString(strings)
-// const myString = buffer.at(2)
-console.log("RESULT ", buffer.BUFFER)
+const myString = buffer.at(-1)
+console.log("RESULT ", myString)
 
 const bufferInArray = buffer.buffer()
 console.log("decode ", buffer.decode(bufferInArray))
