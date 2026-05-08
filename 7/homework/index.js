@@ -276,6 +276,41 @@ class TwoCoderString {
   buffer() {
     return this.BUFFER
   }
+
+  // Декодируем буфер
+  decode(decodeBuffer) {
+    const decoder = new TextDecoder();
+
+    // Создаем новый view из полученного буфера
+    let view = new DataView(decodeBuffer)
+
+    let offset = 0
+
+    let startingStrings = 0
+    const stringsArray = []
+
+    let index = 0
+
+    do {
+      // Количество символов
+      const countChars = view.getUint32(offset, true)
+      offset += 4
+
+      // Указатель на интекс
+      const pointer = view.getUint32(offset, true)
+      if (index === 0) {
+        startingStrings = view.getUint32(offset, true)
+      }
+      offset += 4
+
+      stringsArray[index] = decoder.decode(decodeBuffer.slice(pointer, pointer + countChars))
+
+      index++
+    }
+    while (startingStrings !== offset)
+
+    return stringsArray
+  }
 }
 
 const strings = ['hello', 'kill', '', 'world', 'lol']
@@ -283,6 +318,6 @@ const buffer = new TwoCoderString(strings)
 // const myString = buffer.at(2)
 console.log("RESULT ", buffer.BUFFER)
 
-// const bufferInArray = buffer.buffer()
-// console.log("decode ", buffer.decode(bufferInArray))
+const bufferInArray = buffer.buffer()
+console.log("decode ", buffer.decode(bufferInArray))
 
