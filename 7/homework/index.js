@@ -319,18 +319,19 @@ class TwoCoderString {
   at(number) {
     const decoder = new TextDecoder();
 
-    const indexOnPointerString = new Array(this.POINTER_ON_FIRST_STRING / 8).fill(0)
-    const indexOnCountChars = new Array(this.POINTER_ON_FIRST_STRING / 8).fill(0)
-    for (let pointer = 0, i = 0; pointer < this.POINTER_ON_FIRST_STRING; i++) {
-      indexOnCountChars[i] = this.VIEW.getUint32(pointer, true)
-      pointer += 4
-      indexOnPointerString[i] = this.VIEW.getUint32(pointer, true)
-      pointer += 4
+    const resultWithNegativeIndex = (this.POINTER_ON_FIRST_STRING / 8 + number) * 8
+
+    if (resultWithNegativeIndex < 0) {
+      return undefined
     }
 
-    const desiredElementIndex = number < 0 ? indexOnPointerString.length + number : number
+    const pointerToNumberCharacters = number >= 0 ? 8 * number : resultWithNegativeIndex
+    const pointerOnIndex = number >= 0 ? 8 * number + 4 : resultWithNegativeIndex + 4
 
-    const resultString = this.BUFFER.slice(indexOnPointerString[desiredElementIndex], indexOnPointerString[desiredElementIndex] + indexOnCountChars[desiredElementIndex])
+    const countChars = this.VIEW.getUint32(pointerToNumberCharacters, true)
+    const indexStrings = this.VIEW.getUint32(pointerOnIndex, true)
+
+    const resultString = this.BUFFER.slice(indexStrings, indexStrings + countChars)
 
     return  decoder.decode(resultString)
   }
@@ -338,7 +339,7 @@ class TwoCoderString {
 
 const strings = ['hello', 'kill', '', 'world', 'lol']
 const buffer = new TwoCoderString(strings)
-const myString = buffer.at(-1)
+const myString = buffer.at(1)
 console.log("RESULT ", myString)
 
 const bufferInArray = buffer.buffer()
