@@ -6,7 +6,7 @@
 
 Опции:
   --rows, -n <число>        Количество строк (по умолчанию 100)
-  --output, -o <файл>       Имя выходного файла (по умолчанию data.csv)
+  --output, -o <файл>       Имя выходного файла (по умолчанию data-100.csv)
   --compress, -c <типы>     Сжатие: zip, br (brotli), gz (gzip) через запятую
   --compress-all            Сжать всеми методами (zip, br, gz)
   --help, -h                Показать эту справку
@@ -39,7 +39,7 @@ async function main() {
   const args = process.argv.slice(2);
 
   let count = 100;
-  let output = "data.csv";
+  let output = "data-100.csv";
   let compress = []; // 'zip', 'br', 'gz'
 
   for (let i = 0; i < args.length; i++) {
@@ -330,7 +330,7 @@ async function compressToZip(inputFile, outputFile = null, options = {}) {
   });
 }
 
-async function generateCsvStream(rowsCount = 100, outputFile = "data.csv") {
+async function generateCsvStream(rowsCount = 100, outputFile = "data-100.csv") {
   console.log(`🚀  Генерация ${rowsCount.toLocaleString()} строк в потоковом режиме...`);
 
   const writeStream = fs.createWriteStream(outputFile, {
