@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import * as readline from "readline";
 
-parseCSV("./very-big-csv", ",", (err, data) => {
+parseCSV("data.csv", ",", (err, data) => {
   if (err != null) {
     console.error(err);
     return;
@@ -10,17 +10,80 @@ parseCSV("./very-big-csv", ",", (err, data) => {
   console.log(data);
 });
 
+function switchBoolean (str: string): boolean {
+  switch (str) {
+    case "TRUE":
+      return true;
+    case "FALSE":
+      return false;
+    default:
+      return false;
+  }
+}
+
+function makeNumber (str: string): number | string {
+  if (Number(str)) {
+    return Number(str)
+  } else {
+    return str
+  }
+}
+
+function parseStringOnKey (str:string, key:string) {
+  switch (key) {
+    case "id":
+      return makeNumber(str);
+    case "active":
+      return switchBoolean(str);
+    case "score":
+      return makeNumber(str);
+    case "verified":
+      return switchBoolean(str);
+    case "registered_ms":
+      return makeNumber(str);
+    case "last_seen_ms":
+      return makeNumber(str);
+    default:
+      return str;
+  }
+}
+
 function parseCSV(file: string, separator: string, cb: (err: Error | null, data: string[]) => void) {
+  const result: any[] = []
+  let isOneLine = true;
+  let keysObjectWithArray: string[] = []
+  const objectFromFile: any = {}
+
   const rl = readline.createInterface({
     input: fs.createReadStream(file),
     crlfDelay: Infinity
   });
 
+  function parseLineCSV (line: string[]) {
+    const clearObject = {...objectFromFile}
+
+    line.forEach((item, index) => {
+      const objectKey: string = keysObjectWithArray[index]
+      clearObject[objectKey] = parseStringOnKey(item, objectKey)
+    })
+
+    return clearObject
+  }
+
   rl.on('line', (line) => {
-    // ...
+    if (isOneLine) {
+      // разделил ключи объекта
+      keysObjectWithArray = [...line.split(separator)]
+      keysObjectWithArray.forEach(item => objectFromFile[item] = '')
+      // Записали ключи объекта
+      isOneLine = false;
+      return
+    }
+
+    result.push(parseLineCSV(line.split(separator)))
   });
 
   rl.once('close', () => {
-    // ...
+    return result
   });
 }
