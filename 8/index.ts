@@ -1,5 +1,7 @@
 import * as fs from "fs";
 import * as readline from "readline";
+import { unpack, UnpackrStream } from "msgpackr";
+import * as zlib from "zlib";
 
 function switchBoolean(str: string): boolean {
   switch (str) {
@@ -37,6 +39,74 @@ function parseStringOnKey(str: string, key: string) {
   }
 }
 
+function parseCSV(
+  file: string,
+  separator: string,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+
+    let isHeader = true;
+
+    let keysObjectWithArray: string[] = [];
+
+    const rl = readline.createInterface({
+      input: fs.createReadStream(file),
+      crlfDelay: Infinity
+    });
+
+    const startCSV = performance.now();
+
+    let firstRowTime = 0;
+
+    rl.on("line", (line) => {
+
+      if (isHeader) {
+        keysObjectWithArray = line.split(separator);
+
+        isHeader = false;
+
+        return;
+      }
+
+      if (firstRowTime === 0) {
+        firstRowTime = performance.now() - startCSV;
+
+        console.log(
+          "CSV first row:",
+          firstRowTime.toFixed(2),
+          "ms"
+        );
+      }
+
+      const values = line.split(separator);
+
+      const row: Record<string, any> = {};
+
+      values.forEach((item, index) => {
+        const key = keysObjectWithArray[index];
+
+        row[key] = parseStringOnKey(item, key);
+      });
+
+      void row;
+    });
+
+    rl.once("close", () => {
+      const totalTimeCSV = performance.now() - startCSV;
+
+      console.log(
+        "CSV total:",
+        totalTimeCSV.toFixed(2),
+        "ms"
+      );
+
+      resolve();
+    });
+
+    rl.once("error", reject);
+  });
+}
+
 function checkTimeParseJson(path: string) {
   const start = performance.now();
 
@@ -72,91 +142,48 @@ function checkTimeParseJson(path: string) {
   );
 }
 
-function parseCSV(
-  file: string,
-  separator: string,
-  cb: (err: Error | null, data?: any[]) => void
-) {
-  const result: any[] = [];
 
-  let isHeader = true;
+function checkMessagePack(path: string): Promise<void> {
+  return new Promise((resolve, reject) => {
 
-  let keysObjectWithArray: string[] = [];
+    const start = performance.now();
 
-  const rl = readline.createInterface({
-    input: fs.createReadStream(file),
-    crlfDelay: Infinity
-  });
+    const stream = fs
+      .createReadStream(path)
+      .pipe(zlib.createBrotliDecompress())
+      .pipe(new UnpackrStream());
+      // .pipe(zlib.createBrotliDecompress()) // br
+      // .pipe(zlib.createGunzip()) // gz
 
-  const startCSV = performance.now();
 
-  let firstRowTime = 0;
+    let firstRowTime = 0;
 
-  let peakMemory = process.memoryUsage().heapUsed;
+    stream.on("data", () => {
 
-  function updatePeakMemory() {
-    peakMemory = Math.max(
-      peakMemory,
-      process.memoryUsage().heapUsed
-    );
-  }
+      if (firstRowTime === 0) {
+        firstRowTime = performance.now() - start;
 
-  updatePeakMemory()
-
-  rl.on("line", (line) => {
-
-    // HEADER
-    if (isHeader) {
-      keysObjectWithArray = line.split(separator);
-
-      isHeader = false;
-
-      return;
-    }
-
-    // FIRST DATA ROW
-    if (firstRowTime === 0) {
-      firstRowTime = performance.now() - startCSV;
-
-      console.log(
-        "CSV first row:",
-        firstRowTime.toFixed(2),
-        "ms"
-      );
-    }
-
-    const values = line.split(separator);
-
-    const row: Record<string, any> = {};
-
-    values.forEach((item, index) => {
-      const key = keysObjectWithArray[index];
-
-      row[key] = parseStringOnKey(item, key);
+        console.log(
+          "MSGPACK first row:",
+          firstRowTime.toFixed(2),
+          "ms"
+        );
+      }
     });
 
-    // имитируем обработку строки
-    void row;
-  });
+    stream.on("end", () => {
+      const total = performance.now() - start;
 
-  rl.once("close", () => {
-    const totalTimeCSV = performance.now() - startCSV;
+      console.log(
+        "MSGPACK total:",
+        total.toFixed(2),
+        "ms"
+      );
 
-    console.log("CSV total:", totalTimeCSV.toFixed(2), "ms");
+      resolve();
+    });
 
-
-    console.log(
-      "CSV peak memory:",
-      (peakMemory / 1024 / 1024).toFixed(2),
-      "MB"
-    );
-
-    // createJSONFile(result, 'data-300_000.json')
-    cb(null, result);
-  });
-
-  rl.once("error", (err) => {
-    cb(err);
+    stream.on("error", reject);
   });
 }
 
@@ -166,24 +193,31 @@ function parseCSV(
 |--------------------------------------------------------------------------
 */
 
-console.log("\n--- JSON ---");
+async function main() {
 
-checkTimeParseJson("data/data-300_000.json");
+  const raschirenie = [''] // , '.br', '.gz', '.zip'
 
-global.gc?.();
+  for (const ras of raschirenie) {
+    // console.log("\n--- JSON ---" + ras);
 
-console.log("\n--- CSV ---");
+    // checkTimeParseJson(`data/data-300_000.json${ras}`);
 
-parseCSV("./data/data-300_000.csv", ",", (err) => {
-  if (err) {
-    console.error(err);
+    global.gc?.();
+
+    console.log("\n--- CSV ---");
+
+    await parseCSV(
+      `./data/data-300_000.csv.br`,
+      ","
+    );
+
+    console.log("\n--- MSGPACK ---");
+
+    await checkMessagePack(
+      `./data/data-300_000.msgpack.br`
+    );
   }
-});
-
-function createJSONFile(res: any, fileName: string) {
-  fs.writeFileSync(
-    fileName,
-    JSON.stringify(res, null, 2)
-  );
 }
+
+(async () => await main())()
 
