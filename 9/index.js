@@ -43,12 +43,12 @@ class RGBAClass {
     return this.view.getUint8(0);
   }
 
-  blue() {
+  green() {
     return this.view.getUint8(1)
   }
 
 
-  green() {
+  blue() {
     return this.view.getUint8(2)
   }
 
@@ -58,7 +58,7 @@ class RGBAClass {
   }
   
   viewRGBA() {
-    return [this.red(), this.blue(), this.green(), this.alpha()]
+    return [this.red(), this.green(), this.blue(), this.alpha()]
   }
 }
 
