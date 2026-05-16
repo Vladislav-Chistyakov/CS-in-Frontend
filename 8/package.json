@@ -17,6 +17,7 @@
     "typescript": "^6.0.2"
   },
   "dependencies": {
+    "adm-zip": "^0.5.17",
     "archiver": "^8.0.0",
     "msgpackr": "^2.0.1"
   }

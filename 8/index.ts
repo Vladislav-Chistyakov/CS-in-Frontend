@@ -2,6 +2,9 @@ import * as fs from "fs";
 import * as readline from "readline";
 import { unpack, UnpackrStream } from "msgpackr";
 import * as zlib from "zlib";
+// @ts-ignore
+import AdmZip from "adm-zip";
+import {Readable} from "node:stream";
 
 function switchBoolean(str: string): boolean {
   switch (str) {
@@ -39,18 +42,42 @@ function parseStringOnKey(str: string, key: string) {
   }
 }
 
+// TODO PARSE CSV
 function parseCSV(
   file: string,
   separator: string,
 ): Promise<void> {
+
   return new Promise((resolve, reject) => {
+
+    let inputStream;
+
+    // ZIP
+    if (file.endsWith(".zip")) {
+
+      const zip = new AdmZip(file);
+
+      const entries = zip.getEntries();
+
+      const csvFile = entries[0];
+
+      const csvString =
+        csvFile.getData().toString("utf-8");
+
+      inputStream = Readable.from(csvString.split("\n"));
+
+    } else {
+
+      inputStream = fs.createReadStream(file);
+
+    }
 
     let isHeader = true;
 
     let keysObjectWithArray: string[] = [];
 
     const rl = readline.createInterface({
-      input: fs.createReadStream(file),
+      input: inputStream,
       crlfDelay: Infinity
     });
 
@@ -61,6 +88,7 @@ function parseCSV(
     rl.on("line", (line) => {
 
       if (isHeader) {
+
         keysObjectWithArray = line.split(separator);
 
         isHeader = false;
@@ -69,7 +97,9 @@ function parseCSV(
       }
 
       if (firstRowTime === 0) {
-        firstRowTime = performance.now() - startCSV;
+
+        firstRowTime =
+          performance.now() - startCSV;
 
         console.log(
           "CSV first row:",
@@ -83,16 +113,21 @@ function parseCSV(
       const row: Record<string, any> = {};
 
       values.forEach((item, index) => {
+
         const key = keysObjectWithArray[index];
 
-        row[key] = parseStringOnKey(item, key);
+        row[key] =
+          parseStringOnKey(item, key);
+
       });
 
       void row;
     });
 
     rl.once("close", () => {
-      const totalTimeCSV = performance.now() - startCSV;
+
+      const totalTimeCSV =
+        performance.now() - startCSV;
 
       console.log(
         "CSV total:",
@@ -107,51 +142,44 @@ function parseCSV(
   });
 }
 
+
+// TODO PARSE JSON
 function checkTimeParseJson(path: string) {
   const start = performance.now();
+  console.log('PATH ', path)
 
-  let peakMemory = process.memoryUsage().heapUsed;
+  const zip = new AdmZip(path);
 
-  function updatePeakMemory() {
-    peakMemory = Math.max(
-      peakMemory,
-      process.memoryUsage().heapUsed
-    );
-  }
+  const entries = zip.getEntries();
 
-  // Чтение файла
-  const jsonString = fs.readFileSync(path, "utf-8");
+  const file = entries[0];
 
-  updatePeakMemory();
+  const jsonString =
+    file.getData().toString("utf-8");
 
-  // Парсинг JSON
   JSON.parse(jsonString);
-
-  updatePeakMemory();
 
   const totalTime = performance.now() - start;
 
-  console.log("JSON total:", totalTime.toFixed(2), "ms");
-
-  console.log("JSON first row:", totalTime.toFixed(2), "ms");
-
   console.log(
-    "JSON peak memory:",
-    (peakMemory / 1024 / 1024).toFixed(2),
-    "MB"
+    "JSON ZIP total:",
+    totalTime.toFixed(2),
+    "ms"
   );
 }
 
 
-function checkMessagePack(path: string): Promise<void> {
+// TODO PARSE MSGPACK
+function checkMSGPACK(path: string): Promise<void> {
   return new Promise((resolve, reject) => {
 
     const start = performance.now();
 
     const stream = fs
       .createReadStream(path)
-      .pipe(zlib.createBrotliDecompress())
-      .pipe(new UnpackrStream());
+      .pipe(zlib.createGunzip())
+      .pipe(new UnpackrStream())
+
       // .pipe(zlib.createBrotliDecompress()) // br
       // .pipe(zlib.createGunzip()) // gz
 
@@ -195,27 +223,27 @@ function checkMessagePack(path: string): Promise<void> {
 
 async function main() {
 
-  const raschirenie = [''] // , '.br', '.gz', '.zip'
+  const raschirenie = ['.zip'] // , '.br', '.gz', '.zip'
 
   for (const ras of raschirenie) {
-    // console.log("\n--- JSON ---" + ras);
+    console.log("\n--- JSON ---" + ras);
 
-    // checkTimeParseJson(`data/data-300_000.json${ras}`);
+    checkTimeParseJson(`data/data-300_000.json${ras}`);
 
     global.gc?.();
 
     console.log("\n--- CSV ---");
 
     await parseCSV(
-      `./data/data-300_000.csv.br`,
+      `./data/data-300_000.csv${ras}`,
       ","
     );
 
     console.log("\n--- MSGPACK ---");
 
-    await checkMessagePack(
-      `./data/data-300_000.msgpack.br`
-    );
+//    await checkMSGPACK(
+  //    `./data/data-300_000.msgpack${ras}`
+    //);
   }
 }
 
