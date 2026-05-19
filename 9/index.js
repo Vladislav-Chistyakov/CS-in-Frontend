@@ -8,6 +8,7 @@
 class RGBAView {
   array
   offset
+  static BYTES_PER_ELEMENT = 4
 
   constructor(array, offset) {
     // Декодировщик HEX
@@ -130,17 +131,17 @@ class Matrix2D {
   }
 
   get(row, col) {
-    const color = new RGBAView(this.#data, this.getIndex(row, col) * 4)
+    const color = new this.#RGBA(this.#data, this.getIndex(row, col) * 4)
     return color.viewRGBA()
   }
   
   set(row, col, code) {
-    const color = new RGBAView(this.#data, this.getIndex(row, col) * 4)
+    const color = new this.#RGBA(this.#data, this.getIndex(row, col) * 4)
     return color.set(code)
   }
   
   view(row, col) {
-    return new RGBAView(this.#data, this.getIndex(row, col) * 4)
+    return new this.#RGBA(this.#data, this.getIndex(row, col) * 4)
   }
 }
 
@@ -158,6 +159,94 @@ console.log(test.view(1, 1).red)
 test.view(1, 1).red = 255
 console.log(test.get(1, 1))
 ctx.putImageData(buffer, 0, 0)
+
+// Обычный вектор, но в качестве элемента кортеж RGBA, 
+// а третий опциональный параметр позволяет задать используемый буфер (вместо создания нового)
+
+const color = '#4b4141'
+
+class Vector {
+  #length
+  #capacity
+  #RGBA
+  buffer
+  view
+  
+  constructor(capacity, RGBA) {
+    // capacity общая вместимость + 4 (количество байт занимаемое capacity) + 4 (length - количество занятого месте)
+    this.buffer = new ArrayBuffer(capacity * RGBA.BYTES_PER_ELEMENT + Uint32Array.BYTES_PER_ELEMENT * 2)
+    
+    // Задаем значение #capacity
+    this.#capacity = new Uint32Array(this.buffer,0, 1)
+    this.#capacity[0] = typeof capacity === 'number' ? capacity : 0
+
+    // Задаем значение #length
+    this.#length = new Uint32Array(this.buffer,4, 1)
+    this.#length[0] = 123
+    console.log('', this.buffer.byteLength)
+    
+    this.#RGBA = RGBA
+    
+    this.view = new DataView(this.buffer)
+    console.log('', this.view)
+  }
+
+  get capacity () {
+    return this.#capacity[0]
+  }
+
+  get length () {
+    return this.#length[0]
+  }
+
+  fill(code) {
+    const baseOffset = 8
+    const view = new Uint8Array(this.buffer) 
+    for (let offset = baseOffset, i = 0; i < this.capacity; offset += 4, i++) {
+      const RGBA = new this.#RGBA(view, offset)
+      RGBA.set(code)
+    }
+    console.log('this buffer', view)
+    console.log(view)
+  }
+}
+
+const pixels = new Vector(4, RGBAView);
+
+// Readonly значение емкости вектора
+console.log(pixels.capacity);
+
+// Readonly значение длины вектора
+console.log(pixels.length);
+
+pixels.fill('#cc1616')
+// ctx.putImageData(buffer, 0, 0)
+
+// Заполняем все цвета одним цветом:
+// вектор не должен знать про нюансы преобразования значений - он должен полагаться на view
+// pixels.fill("#FFF");
+
+// Чтение 0-го элемента вектора: сколько байт прочитать и как вернуть результат определяет view
+// console.log(pixels.get(0)); // [255, 255, 255, 255]
+
+// Запись 10-го элемента
+// pixels.set(10, [255, 0, 0, 255]); // Явное задание цвета
+// pixels.set(10, "#EFEFEF");      // Задание через HEX
+
+// Добавление в конец с возможным расширением
+// pixels.push([255, 0, 0, 255]);
+// pixels.push("#EFEFEF");
+
+// Pop реаллокацию не делает
+// pixels.pop(); // [239, 239, 239, 255]
+
+// pixels.shrinkToFit(); // Ужимает внутренний буфер до фактической длины вектора
+// pixels.reserve(10);   // Гарантирует место в буфере для хранения как минимум ещё 10 элементов (если места не хватает, происходит реаллокация)
+
+// Метод view позволяет перейти к покомпонентному доступу к структуре или кортежу с возможностью редактирования
+// console.log(pixels.view(10).red) // 239
+// pixels.view(1).red = 255;
+
 
 
 
