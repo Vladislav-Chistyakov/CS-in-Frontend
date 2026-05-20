@@ -170,7 +170,7 @@ class Vector {
   #capacity
   #RGBA
   buffer
-  view
+  #view
   
   constructor(capacity, RGBA) {
     // capacity общая вместимость + 4 (количество байт занимаемое capacity) + 4 (length - количество занятого месте)
@@ -182,13 +182,15 @@ class Vector {
 
     // Задаем значение #length
     this.#length = new Uint32Array(this.buffer,4, 1)
-    this.#length[0] = 123
-    console.log('', this.buffer.byteLength)
+    this.#length[0] = 0
     
     this.#RGBA = RGBA
     
-    this.view = new DataView(this.buffer)
-    console.log('', this.view)
+    this.#view = new Uint8Array(this.buffer)
+  }
+  
+  offsetForSearchColor (indexElement) {
+    return Uint32Array.BYTES_PER_ELEMENT * 2 + this.#RGBA.BYTES_PER_ELEMENT * indexElement
   }
 
   get capacity () {
@@ -198,16 +200,25 @@ class Vector {
   get length () {
     return this.#length[0]
   }
+  
+  get (index) {
+    const RGBA = new this.#RGBA(this.#view, this.offsetForSearchColor(index))
+    
+    return RGBA.viewRGBA()
+  }
+
+  set (index, color) {
+    const RGBA = new this.#RGBA(this.#view, this.offsetForSearchColor(index))
+    RGBA.set(color)
+  }
+  
 
   fill(code) {
-    const baseOffset = 8
-    const view = new Uint8Array(this.buffer) 
-    for (let offset = baseOffset, i = 0; i < this.capacity; offset += 4, i++) {
-      const RGBA = new this.#RGBA(view, offset)
+    for (let i = 0; i < this.capacity; i++) {
+      const RGBA = new this.#RGBA(this.#view, this.offsetForSearchColor(i))
       RGBA.set(code)
     }
-    console.log('this buffer', view)
-    console.log(view)
+    console.log(this.#view)
   }
 }
 
@@ -220,7 +231,12 @@ console.log(pixels.capacity);
 console.log(pixels.length);
 
 pixels.fill('#cc1616')
+pixels.fill('#b416cc')
+pixels.fill([173, 22, 204, 255])
 // ctx.putImageData(buffer, 0, 0)
+console.log('get', pixels.get(0));
+pixels.set(0, [255,255,255,255])
+console.log('get2', pixels.get(0));
 
 // Заполняем все цвета одним цветом:
 // вектор не должен знать про нюансы преобразования значений - он должен полагаться на view
