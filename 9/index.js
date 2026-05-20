@@ -201,28 +201,45 @@ class Vector {
     return this.#length[0]
   }
   
+  push (color) {
+    if (this.length < this.capacity) {
+      this.set(this.length, color)
+      const RGBA = new this.#RGBA(this.#view, this.offsetForSearchColor(this.length))
+      RGBA.set(color)
+      this.#length[0] = this.length + 1
+    }
+  }
+  
   get (index) {
+    if (index + 1 > this.length) {
+      console.error('Этого элемента не существует', index, index + 1, this.length)
+      return undefined
+    }
     const RGBA = new this.#RGBA(this.#view, this.offsetForSearchColor(index))
     
     return RGBA.viewRGBA()
   }
 
   set (index, color) {
+    if (index + 1 > this.length && index + 1 > this.capacity) {
+      console.error('Нет вохможности изменить элемент', index, index + 1, this.length)
+      return undefined
+    }
     const RGBA = new this.#RGBA(this.#view, this.offsetForSearchColor(index))
     RGBA.set(color)
   }
-  
 
   fill(code) {
     for (let i = 0; i < this.capacity; i++) {
       const RGBA = new this.#RGBA(this.#view, this.offsetForSearchColor(i))
       RGBA.set(code)
     }
-    console.log(this.#view)
+    this.#length[0] = this.capacity
+    console.log('THIS B', this.buffer)
   }
 }
 
-const pixels = new Vector(4, RGBAView);
+const pixels = new Vector(3, RGBAView);
 
 // Readonly значение емкости вектора
 console.log(pixels.capacity);
@@ -230,13 +247,15 @@ console.log(pixels.capacity);
 // Readonly значение длины вектора
 console.log(pixels.length);
 
-pixels.fill('#cc1616')
-pixels.fill('#b416cc')
-pixels.fill([173, 22, 204, 255])
+// pixels.fill('#cc1616')
+// pixels.fill('#b416cc')
+// pixels.fill([173, 22, 204, 255])
 // ctx.putImageData(buffer, 0, 0)
-console.log('get', pixels.get(0));
+// console.log('get', pixels.get(0));
 pixels.set(0, [255,255,255,255])
-console.log('get2', pixels.get(0));
+pixels.set(2, [123,123,255,255])
+// console.log('get2', pixels.get(0));
+console.log('get3', pixels.get(0));
 
 // Заполняем все цвета одним цветом:
 // вектор не должен знать про нюансы преобразования значений - он должен полагаться на view
