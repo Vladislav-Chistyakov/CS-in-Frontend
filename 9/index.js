@@ -251,6 +251,14 @@ class Vector {
   viewBuffer() {
     console.log('this buffer', this.buffer)
   }
+
+  view(index) {
+    if (index >= this.length) {
+      console.log('Этого элемента не существует')
+      return undefined
+    }
+    return new this.#RGBA(this.#view, this.offsetForSearchColor(index))
+  }
 }
 
 const pixels = new Vector(3, RGBAView);
@@ -275,8 +283,10 @@ console.log('TEST 3')
 pixels.push([125,125,125,125])
 console.log('TEST 4')
 pixels.push([11,11,11,255])
+console.log('VIEW ', pixels.view(2).red)
 pixels.viewBuffer()
 pixels.pop()
+console.log('VIEW ', pixels.view(2).red)
 
 
 
