@@ -259,6 +259,18 @@ class Vector {
     }
     return new this.#RGBA(this.#view, this.offsetForSearchColor(index))
   }
+
+  reserve(countColor) {
+    const newBuffer = new ArrayBuffer(this.offsetForSearchColor(this.length) + countColor * this.#RGBA.BYTES_PER_ELEMENT)
+    const oldView = new Uint8Array(this.buffer)
+    const newView = new Uint8Array(newBuffer)
+    newView.set(oldView)
+    this.#view = newView
+    this.buffer = newBuffer
+    this.#capacity = new Uint32Array(newBuffer,0, 1)
+    this.#length = new Uint32Array(newBuffer,4, 1)
+    this.#capacity[0] = this.#capacity[0] + countColor
+  }
 }
 
 const pixels = new Vector(3, RGBAView);
@@ -286,8 +298,9 @@ pixels.push([11,11,11,255])
 console.log('VIEW ', pixels.view(2).red)
 pixels.viewBuffer()
 pixels.pop()
-console.log('VIEW ', pixels.view(2).red)
-
+pixels.reserve(11)
+pixels.fill([173, 22, 204, 255])
+pixels.viewBuffer()
 
 
 
