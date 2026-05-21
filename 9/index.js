@@ -206,6 +206,11 @@ class Vector {
       const RGBA = new this.#RGBA(this.#view, this.offsetForSearchColor(this.length))
       RGBA.set(color)
       this.#length[0] = this.length + 1
+    } else {
+      this.reserve(this.capacity * 2)
+      const RGBA = new this.#RGBA(this.#view, this.offsetForSearchColor(this.length))
+      RGBA.set(color)
+      this.#length[0] = this.length + 1
     }
   }
 
@@ -271,6 +276,20 @@ class Vector {
     this.#length = new Uint32Array(newBuffer,4, 1)
     this.#capacity[0] = this.#capacity[0] + countColor
   }
+
+  shrinkToFit() {
+    if (this.capacity > this.length) {
+      const newBuffer = new ArrayBuffer(this.offsetForSearchColor(this.length))
+      const oldView = new Uint8Array(this.buffer)
+      const newView = new Uint8Array(newBuffer)
+      newView.set(oldView.slice(0, this.offsetForSearchColor(this.length)))
+      this.#view = newView
+      this.buffer = newBuffer
+      this.#length = new Uint32Array(newBuffer,4, 1)
+      this.#capacity = new Uint32Array(newBuffer,0, 1)
+      this.#capacity[0] = this.length
+    }
+  }
 }
 
 const pixels = new Vector(3, RGBAView);
@@ -299,7 +318,9 @@ console.log('VIEW ', pixels.view(2).red)
 pixels.viewBuffer()
 pixels.pop()
 pixels.reserve(11)
-pixels.fill([173, 22, 204, 255])
+// pixels.fill([173, 22, 204, 255])
+pixels.viewBuffer()
+pixels.shrinkToFit()
 pixels.viewBuffer()
 
 
