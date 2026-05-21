@@ -203,7 +203,6 @@ class Vector {
   
   push (color) {
     if (this.length < this.capacity) {
-      this.set(this.length, color)
       const RGBA = new this.#RGBA(this.#view, this.offsetForSearchColor(this.length))
       RGBA.set(color)
       this.#length[0] = this.length + 1
@@ -211,6 +210,7 @@ class Vector {
   }
   
   get (index) {
+    console.log('INDEX ', index, this.length)
     if (index + 1 > this.length) {
       console.error('Этого элемента не существует', index, index + 1, this.length)
       return undefined
@@ -221,7 +221,7 @@ class Vector {
   }
 
   set (index, color) {
-    if (index + 1 > this.length && index + 1 > this.capacity) {
+    if (index + 1 > this.length) {
       console.error('Нет вохможности изменить элемент', index, index + 1, this.length)
       return undefined
     }
@@ -236,6 +236,10 @@ class Vector {
     }
     this.#length[0] = this.capacity
     console.log('THIS B', this.buffer)
+  }
+
+  viewBuffer() {
+    console.log('this buffer', this.buffer)
   }
 }
 
@@ -252,36 +256,19 @@ console.log(pixels.length);
 // pixels.fill([173, 22, 204, 255])
 // ctx.putImageData(buffer, 0, 0)
 // console.log('get', pixels.get(0));
-pixels.set(0, [255,255,255,255])
-pixels.set(2, [123,123,255,255])
+console.log('TEST ')
+pixels.push([255,255,255,255])
+console.log('TEST 2')
 // console.log('get2', pixels.get(0));
 console.log('get3', pixels.get(0));
-
-// Заполняем все цвета одним цветом:
-// вектор не должен знать про нюансы преобразования значений - он должен полагаться на view
-// pixels.fill("#FFF");
-
-// Чтение 0-го элемента вектора: сколько байт прочитать и как вернуть результат определяет view
-// console.log(pixels.get(0)); // [255, 255, 255, 255]
-
-// Запись 10-го элемента
-// pixels.set(10, [255, 0, 0, 255]); // Явное задание цвета
-// pixels.set(10, "#EFEFEF");      // Задание через HEX
-
-// Добавление в конец с возможным расширением
-// pixels.push([255, 0, 0, 255]);
-// pixels.push("#EFEFEF");
-
-// Pop реаллокацию не делает
-// pixels.pop(); // [239, 239, 239, 255]
-
-// pixels.shrinkToFit(); // Ужимает внутренний буфер до фактической длины вектора
-// pixels.reserve(10);   // Гарантирует место в буфере для хранения как минимум ещё 10 элементов (если места не хватает, происходит реаллокация)
-
-// Метод view позволяет перейти к покомпонентному доступу к структуре или кортежу с возможностью редактирования
-// console.log(pixels.view(10).red) // 239
-// pixels.view(1).red = 255;
-
+console.log('TEST 3')
+pixels.push([125,125,125,125])
+console.log('TEST 4')
+pixels.push([11,11,11,255])
+pixels.set(2, [123,123,255,255])
+pixels.viewBuffer()
+console.log('TEST 5')
+console.log('length', pixels.length)
 
 
 
