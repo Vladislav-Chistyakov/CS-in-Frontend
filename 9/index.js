@@ -208,7 +208,17 @@ class Vector {
       this.#length[0] = this.length + 1
     }
   }
-  
+
+  pop () {
+    if (this.length > 0) {
+      const RGBA = new this.#RGBA(this.#view, this.offsetForSearchColor(this.length - 1))
+      const color = this.get(this.length - 1)
+      RGBA.set([0, 0, 0, 0])
+      this.#length[0] = this.length - 1
+      return color
+    }
+  }
+
   get (index) {
     console.log('INDEX ', index, this.length)
     if (index + 1 > this.length) {
@@ -265,10 +275,8 @@ console.log('TEST 3')
 pixels.push([125,125,125,125])
 console.log('TEST 4')
 pixels.push([11,11,11,255])
-pixels.set(2, [123,123,255,255])
 pixels.viewBuffer()
-console.log('TEST 5')
-console.log('length', pixels.length)
+pixels.pop()
 
 
 
