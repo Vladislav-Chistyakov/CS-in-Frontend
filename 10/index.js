@@ -41,15 +41,17 @@ class Deque {
       return
     }
     
-    if (this.#startNode.arrayIsEmpty) {
+    const result = this.#startNode.shift()
+    
+    // Если start index стал последним
+    // то переключаем на следующую node
+    if (this.#startNode.length === 0 && this.#startNode.next) {
       this.#startNode = this.#startNode.next
       this.#startNode.prev = undefined
-      this.#length --
-      return this.#startNode.shift()
-    } else {
-      this.#length --
-      return this.#startNode.shift()
     }
+
+    this.#length --
+    return result
   }
 
   unshift(value) {
@@ -71,9 +73,7 @@ class Deque {
       return 
     }
     
-    console.log("CHECK ", this.#endNode.startIndex)
-    
-    if (this.#endNode.endIndex === 0) {
+    if (this.#endNode.length === 0 && this.#endNode.prev) {
       const result = this.#endNode.pop()
       this.#endNode = this.#endNode.prev
       this.#endNode.next = undefined
@@ -86,7 +86,6 @@ class Deque {
   }
 
   push(value) {
-    console.log('TTT ', this.#endNode.isEnd)
     if (this.#endNode.isEnd) {
       const newNode = this.createNode()
       newNode.push(value)
@@ -109,14 +108,9 @@ class Node {
   #buffer
   #length = 0
   #capacity = 0
-  #arrayIsFull = false
   startIndex = null
   endIndex = null
 
-  get arrayIsFull () {
-    return this.#arrayIsFull
-  }
-  
   get isEnd () {
     return this.endIndex === this.capacity - 1
   }
@@ -161,17 +155,18 @@ class Node {
     this.#size = size
   }
 
-  checkArrayIsEmpty () {
-    this.#arrayIsFull = this.#length === 0;
-  }
-  
   pop() {
     const result = this.ARRAY[this.endIndex]
     this.ARRAY[this.endIndex] = 0
     this.endIndex -= 1
 
     this.#length -= 1
-    this.checkArrayIsEmpty()
+    
+    if (this.#length === 0) {
+      this.startIndex = null
+      this.endIndex = null
+    }
+    
     return result
   }
 
@@ -181,12 +176,13 @@ class Node {
     this.startIndex += 1
 
     this.#length -= 1
-    this.checkArrayIsFull()
-    return result
-  }
 
-  checkArrayIsFull () {
-    this.#arrayIsFull = this.#capacity === this.#length;
+    if (this.#length === 0) {
+      this.startIndex = null
+      this.endIndex = null
+    }
+  
+    return result
   }
   
   push(value) {
@@ -202,7 +198,6 @@ class Node {
     }
     
     this.#length += 1
-    this.checkArrayIsFull()
   }
 
   unshift(value) {
@@ -212,27 +207,37 @@ class Node {
       this.ARRAY[this.startIndex] = value
     } else {
       if (this.startIndex !== 0) {
-        this.ARRAY[this.startIndex] = value
         this.startIndex -= 1
+        this.ARRAY[this.startIndex] = value
       } else {
         this.ARRAY[this.startIndex] = value
       }
     }
     
     this.#length += 1
-    this.checkArrayIsFull()
   }
 }
 
-const deque = new Deque(Uint8Array, 3);
-deque.push(12)
-deque.push(13)
-deque.unshift(11)
-deque.push(14)
-deque.push(15)
-console.log('Length', deque.startNode, deque.endNode)
+const deque = new Deque(Uint32Array, 3);
+deque.unshift(222)
+deque.unshift(221)
+deque.unshift(220)
+deque.unshift(219)
+deque.push(223)
+deque.push(224)
+deque.push(225)
+deque.push(226)
+deque.shift()
 
-// TODO Не двигается start index
+console.log('Length', deque.startNode, deque.endNode)
+console.log('shift ', deque.shift())
+console.log('shift ', deque.shift())
+console.log('shift ', deque.shift())
+console.log(' pop', deque.pop())
+console.log(' pop', deque.pop())
+console.log(' pop', deque.pop())
+deque.unshift(222)
+console.log('Length', deque.startNode, deque.endNode)
 
 // сделать push самое начало, а unshift конец
 // push(1)
