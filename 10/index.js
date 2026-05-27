@@ -1,60 +1,55 @@
 // Тип массива и его емкость
 
 class Deque {
-  #BYTES_PER_ELEMENT = 0
-  #view
-  #buffer
-  #arr
   #size
-  #byteLength
   ARRAY
+  #currentNode
 
-  get view () {
-    return this.#view
-  }
-
-  get buffer () {
-    return this.#buffer
-  }
-
-  get arr () {
-    return this.#arr
-  }
 
   get size () {
     return this.#size
   }
-  
-  get byteLength () {
-    return this.#byteLength
+
+  get currentNode () {
+    return this.#currentNode
   }
+
 
   constructor(ArrayClass, size) {
     this.ARRAY = ArrayClass
-    if (ArrayClass.BYTES_PER_ELEMENT) this.#BYTES_PER_ELEMENT = ArrayClass.BYTES_PER_ELEMENT
-    this.#byteLength = !!this.#BYTES_PER_ELEMENT
-      ? this.#BYTES_PER_ELEMENT * size
-      : size
-
     this.#size = size
-    this.#buffer = new ArrayBuffer(this.#byteLength)
-    this.#view = new DataView(this.buffer, 0)
-    this.#view.setInt8(0, 13)
-    this.#arr = new ArrayClass(this.buffer)
+
+    this.#currentNode = this.createNode()
   }
   
-  createNewArray() {
-    const countElements = (this.buffer.byteLength + this.byteLength) / this.byteLength 
-    this.#buffer = this.buffer.transfer(countElements * this.byteLength)
-    this.#view = new DataView(this.buffer)
-    
-    console.log('countElements ', countElements)
-    console.log('view ', this.view)
+  createNode() {
+    return new Node(this.ARRAY, this.size)
+  }
+
+  pop() {
+    if (this.#currentNode.length === 0) {
+      this.#currentNode = this.#currentNode.prev
+      this.#currentNode.next = undefined
+      return this.#currentNode.pop()
+    } else {
+      return this.#currentNode.pop()
+    }
+  }
+
+  push(value) {
+    if (this.#currentNode.length !== this.#currentNode.capacity) {
+      this.#currentNode.push(value)
+    } else {
+      const newNode = this.createNode()
+      newNode.push(value)
+      this.#currentNode.next = newNode
+      newNode.prev = this.#currentNode
+      this.#currentNode = newNode
+    }
   }
 }
 
 class Node {
-  ARRAY_CLASS
   ARRAY
   NEXT
   PREV
@@ -67,41 +62,67 @@ class Node {
   get next () {
     return this.NEXT ? this.NEXT : undefined
   }
+
+  set next (value) {
+    this.NEXT = value
+  }
+
+  get prev () {
+    return this.PREV ? this.PREV : undefined
+  }
+
+  set prev (value) {
+    this.PREV = value
+  }
+
+  get capacity () {
+    return this.#capacity
+  }
+
+  get length () {
+    return this.#length
+  }
   
   constructor(ArrayClass, size) {
-    this.ARRAY_CLASS = ArrayClass
     const byteLength = !!ArrayClass.BYTES_PER_ELEMENT
       ? ArrayClass.BYTES_PER_ELEMENT * size
       : size
 
-    this.#size = size
     this.#buffer = new ArrayBuffer(byteLength)
 
-    this.ARRAY = new ArrayClass(this.#buffer)
-    this.#length = this.ARRAY.length
+    this.ARRAY = new ArrayClass(this.#buffer).fill(0)
+    this.#capacity = size
     this.#size = size
+  }
+
+  pop() {
+    this.#length -= 1
+    const result = this.ARRAY[this.#length]
+    this.ARRAY[this.#length] = 0
+    return result
   }
   
   push(value) {
-    if (this.#capacity !== this.#length) {
-      this.ARRAY[this.#capacity] = value
-      this.#capacity += 1
-    } else {
-      this.NEXT = new Node(this.ARRAY_CLASS, this.#size)
-      this.NEXT.push(value)
-    }
+    this.ARRAY[this.#length] = value
+    this.#length += 1
   }
-  
 }
 
-const node = new Node(Uint8Array, 2);
-node.push(12)
-node.push(16)
-node.push(44)
+const deque = new Deque(Uint8Array, 2);
+deque.push(12)
+deque.push(13)
 
-const next = node.next
-console.log('node.next', next.ARRAY)
-// node.createNewArray()
+// console.log('node.next', deque.currentNode, deque.currentNode.ARRAY)
+deque.push(14)
+
+// console.log('node.next', deque.currentNode, deque.currentNode.ARRAY)
+deque.push(15)
+console.log('node.next', deque.currentNode, deque.currentNode.ARRAY)
+console.log('pop', deque.pop())
+console.log('pop', deque.pop())
+console.log('pop', deque.pop())
+console.log('node.next', deque.currentNode, deque.currentNode.ARRAY)
+
 // node.createNewArray()
 
 // dequeue.unshift(1); // Возвращает длину - 1
