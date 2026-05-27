@@ -1,10 +1,11 @@
 // Тип массива и его емкость
 
 class Deque {
+  ARRAY_CLASS
   #size
-  ARRAY
   #startNode
   #endNode
+  #length = 0
 
 
   get size () {
@@ -20,9 +21,13 @@ class Deque {
     return this.#endNode
   }
 
+  get length () {
+    return this.#length
+  }
+
 
   constructor(ArrayClass, size) {
-    this.ARRAY = ArrayClass
+    this.ARRAY_CLASS = ArrayClass
     this.#size = size
 
     this.#endNode = this.createNode()
@@ -30,15 +35,17 @@ class Deque {
   }
   
   createNode() {
-    return new Node(this.ARRAY, this.size)
+    return new Node(this.ARRAY_CLASS, this.size)
   }
 
   pop() {
     if (this.#endNode.length === 0) {
       this.#endNode = this.#endNode.prev
       this.#endNode.next = undefined
+      this.#length --
       return this.#endNode.pop()
     } else {
+      this.#length --
       return this.#endNode.pop()
     }
   }
@@ -53,6 +60,7 @@ class Deque {
       newNode.prev = this.#endNode
       this.#endNode = newNode
     }
+    this.#length ++
   }
 }
 
@@ -126,9 +134,7 @@ deque.push(14)
 deque.push(15)
 console.log('node.next', deque.endNode, deque.endNode.ARRAY)
 console.log('pop', deque.pop())
-console.log('pop', deque.pop())
-console.log('pop', deque.pop())
-console.log('node.next', deque.endNode, deque.endNode.ARRAY)
+console.log('node.next', deque.length, deque.endNode)
 
 // node.createNewArray()
 
