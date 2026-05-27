@@ -7,11 +7,9 @@ class Deque {
   #endNode
   #length = 0
 
-
   get size () {
     return this.#size
   }
-
 
   get startNode () {
     return this.#startNode
@@ -25,7 +23,6 @@ class Deque {
     return this.#length
   }
 
-
   constructor(ArrayClass, size) {
     this.ARRAY_CLASS = ArrayClass
     this.#size = size
@@ -36,6 +33,29 @@ class Deque {
   
   createNode() {
     return new Node(this.ARRAY_CLASS, this.size)
+  }
+  
+  shift () {
+    const result = this.#startNode.shift()
+    if (this.#startNode.length === 0) {
+      this.#startNode = this.#startNode.next
+      this.#startNode.prev = undefined
+    }
+    this.#length --
+    return result
+  }
+
+  unshift(value) {
+    if (this.#startNode.length === this.#startNode.capacity) {
+      const newNode = this.createNode()
+      newNode.next = this.#startNode
+      this.#startNode.prev = newNode
+      this.#startNode = newNode
+      this.#startNode.unshift(value)
+    } else {
+      this.#startNode.unshift(value)
+    }
+    this.#length++
   }
 
   pop() {
@@ -121,32 +141,28 @@ class Node {
     this.ARRAY[this.#length] = value
     this.#length += 1
   }
+
+  unshift(value) {
+    this.ARRAY[(this.#capacity - this.#length) - 1] = value
+    this.#length ++
+  }
+
+  shift() {
+    const result  = this.ARRAY[this.#capacity - this.#length]
+    this.ARRAY[this.#capacity - this.#length] = 0
+    this.#length --
+    return result
+  }
 }
 
 const deque = new Deque(Uint8Array, 2);
 deque.push(12)
 deque.push(13)
-
-// console.log('node.next', deque.endNode, deque.endNode.ARRAY)
 deque.push(14)
+console.log('Deque', deque.startNode)
+deque.unshift(11)
+deque.unshift(10)
+deque.unshift(9)
+deque.shift()
+console.log('Deque', deque.startNode)
 
-// console.log('node.next', deque.endNode, deque.endNode.ARRAY)
-deque.push(15)
-console.log('node.next', deque.endNode, deque.endNode.ARRAY)
-console.log('pop', deque.pop())
-console.log('node.next', deque.length, deque.endNode)
-
-// node.createNewArray()
-
-// dequeue.unshift(1); // Возвращает длину - 1
-// dequeue.unshift(2); // 2
-// dequeue.unshift(3); // 3
-//
-// console.log(dequeue.length); // 3
-// dequeue.shift();  // Удаляет с начала, возвращает удаленный элемент - 3
-//
-// dequeue.push(4);
-// dequeue.push(5);
-// dequeue.push(6);
-//
-// dequeue.pop();    // Удаляет с конца, возвращает удаленный элемент - 6
