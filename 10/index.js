@@ -3,15 +3,21 @@
 class Deque {
   #size
   ARRAY
-  #currentNode
+  #startNode
+  #endNode
 
 
   get size () {
     return this.#size
   }
 
-  get currentNode () {
-    return this.#currentNode
+
+  get startNode () {
+    return this.#startNode
+  }
+
+  get endNode () {
+    return this.#endNode
   }
 
 
@@ -19,7 +25,8 @@ class Deque {
     this.ARRAY = ArrayClass
     this.#size = size
 
-    this.#currentNode = this.createNode()
+    this.#endNode = this.createNode()
+    this.#startNode = this.#endNode
   }
   
   createNode() {
@@ -27,24 +34,24 @@ class Deque {
   }
 
   pop() {
-    if (this.#currentNode.length === 0) {
-      this.#currentNode = this.#currentNode.prev
-      this.#currentNode.next = undefined
-      return this.#currentNode.pop()
+    if (this.#endNode.length === 0) {
+      this.#endNode = this.#endNode.prev
+      this.#endNode.next = undefined
+      return this.#endNode.pop()
     } else {
-      return this.#currentNode.pop()
+      return this.#endNode.pop()
     }
   }
 
   push(value) {
-    if (this.#currentNode.length !== this.#currentNode.capacity) {
-      this.#currentNode.push(value)
+    if (this.#endNode.length !== this.#endNode.capacity) {
+      this.#endNode.push(value)
     } else {
       const newNode = this.createNode()
       newNode.push(value)
-      this.#currentNode.next = newNode
-      newNode.prev = this.#currentNode
-      this.#currentNode = newNode
+      this.#endNode.next = newNode
+      newNode.prev = this.#endNode
+      this.#endNode = newNode
     }
   }
 }
@@ -112,16 +119,16 @@ const deque = new Deque(Uint8Array, 2);
 deque.push(12)
 deque.push(13)
 
-// console.log('node.next', deque.currentNode, deque.currentNode.ARRAY)
+// console.log('node.next', deque.endNode, deque.endNode.ARRAY)
 deque.push(14)
 
-// console.log('node.next', deque.currentNode, deque.currentNode.ARRAY)
+// console.log('node.next', deque.endNode, deque.endNode.ARRAY)
 deque.push(15)
-console.log('node.next', deque.currentNode, deque.currentNode.ARRAY)
+console.log('node.next', deque.endNode, deque.endNode.ARRAY)
 console.log('pop', deque.pop())
 console.log('pop', deque.pop())
 console.log('pop', deque.pop())
-console.log('node.next', deque.currentNode, deque.currentNode.ARRAY)
+console.log('node.next', deque.endNode, deque.endNode.ARRAY)
 
 // node.createNewArray()
 
