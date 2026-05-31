@@ -1,16 +1,33 @@
 // Общий размер памяти — 100 КБ
 // Из них 10 КБ резервируется под стек, остальное — под кучу
-const mem = new Memory(100 * 1024, { stack: 10 * 1024 });
-
 class Memory {
   #arrayBuffer
+  size = 0
+  dataView
+  STACK
+  HEAP
 
   constructor(memory, options) {
     this.#arrayBuffer = new ArrayBuffer(memory);
+    this.size = memory;
+    
+    this.dataView = new DataView(this.#arrayBuffer)
 
-    console.log('LENGTH', this.#arrayBuffer, this.#arrayBuffer.length);
+    this.dataView.setUint8(0, 3)
+
+    if (options && options.stack && typeof options.stack === 'number') {
+      this.dataView.setUint8(0, 7)
+      
+      this.STACK = new DataView(this.#arrayBuffer, 0, options.stack)
+
+      this.dataView.setUint8(1, 17)
+      console.log('STACK', this.STACK);
+    }
+    
+    console.log('LENGTH', this.#arrayBuffer);
   }
 }
+const mem = new Memory(10 * 1024, { stack: 1024 });
 
 // ============================================
 //  Работа со стеком (LIFO)
