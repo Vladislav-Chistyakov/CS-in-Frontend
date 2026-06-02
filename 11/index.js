@@ -1,5 +1,8 @@
 // Общий размер памяти — 100 КБ
 // Из них 10 КБ резервируется под стек, остальное — под кучу
+
+
+
 class Memory {
   #arrayBuffer
   size = 0
@@ -29,6 +32,53 @@ class Memory {
   }
 }
 
+class TypedArray {
+  array = undefined
+  
+  constructor(name) {
+    console.log('name ', typeof name)
+    switch (name) {
+      case 'Uint8Array':
+        this.array =  Uint8Array
+        break
+      case 'Uint16Array':
+        this.array =  Uint16Array
+        break
+      case 'Uint32Array':
+        this.array =  Uint32Array
+        break
+      case 'Int8Array':
+        this.array =  Int8Array
+        break
+      case 'Int16Array':
+        this.array =  Int16Array
+        break
+      case 'Int32Array':
+        this.array =  Int32Array
+        break
+      case 'Float32Array':
+        this.array =  Float32Array
+        break
+      case 'Float64Array':
+        this.array =  Float64Array
+        break
+      case 'BigUint64Array':
+        this.array = BigUint64Array
+        break
+      case 'BigInt64Array':
+        this.array = BigInt64Array
+        break
+      default:
+        console.error('Error, this array type not recognized' , name)
+        break
+    }
+  }
+
+  getNeedType () {
+    return this.array
+  }
+}
+
 class Stack {
   #pointer = 0
   #buffer
@@ -51,9 +101,9 @@ class Stack {
     this.#endMemory = endMemory
   }
 
-  push (buffer) {
+  push (arrayBuffer) {
     const oldBuffer = new Uint8Array(this.#buffer, this.#pointer)
-    const newBuffer = new Uint8Array(buffer)
+    const newBuffer = new Uint8Array(arrayBuffer.buffer)
     
     // TODO вернуть указатель на первый байт
     oldBuffer.set(newBuffer)
@@ -65,7 +115,7 @@ class Stack {
     this.#pointer = this.#pointer + newBuffer.byteLength
     
     // Отдали указатель на начало
-    return new PointerStack(this.#buffer, startPointer, newBuffer.length)
+    return new PointerStack(this.#buffer, startPointer, newBuffer.length, arrayBuffer.constructor.name)
   }
   
   get bufferStack () {
@@ -77,22 +127,25 @@ class PointerStack {
   #buffer
   #pointerStart
   #bufferLength
+  #bufferTypeName
   
-  constructor(buffer, pointerStart, bufferLength) {
+  constructor(buffer, pointerStart, bufferLength, bufferTypeName) {
     this.#buffer = buffer
     this.#pointerStart = pointerStart
     this.#bufferLength = bufferLength
+    this.#bufferTypeName = bufferTypeName
   }
   
   deref() {
-    return this.#buffer.slice(this.#pointerStart, this.#bufferLength)
+    const TypeArray = new TypedArray(this.#bufferTypeName).getNeedType()
+    return new TypeArray(this.#buffer.slice(this.#pointerStart, this.#pointerStart + this.#bufferLength)) 
   }
 }
 
-const arrayBuffer1 = new Uint32Array([1234567]).buffer;
-const arrayBuffer2 = new Uint8Array([1, 2, 3, 4, 5]).buffer;
-const arrayBuffer3 = new Uint16Array([17, 9]).buffer;
-const arrayBuffer4 = new Uint8Array([8, 9, 7, 5]).buffer;
+const arrayBuffer1 = new Uint32Array([1234567]);
+const arrayBuffer2 = new Uint8Array([1, 2, 3, 4, 5]);
+const arrayBuffer3 = new Uint16Array([17, 9]);
+const arrayBuffer4 = new Uint8Array([8, 9, 7, 5]);
 
 const memory = new Memory(10 * 1024, { stack: 1024 });
 
@@ -100,9 +153,10 @@ const memory = new Memory(10 * 1024, { stack: 1024 });
 // console.log('T - ', memory.push(arrayBuffer1))
 // console.log('T - ', memory.push(arrayBuffer2))
 // console.log('T - ', memory.bufferStack)
+const p1 = memory.push(new Uint32Array([1234567]));
+const p2 = memory.push(new Uint8Array([1, 2, 3, 4, 5]));
 
-const pointer1 = memory.push(arrayBuffer1)
-console.log('pointer1 - ', pointer1.deref())
+console.log(p2.deref());
 
 
 
