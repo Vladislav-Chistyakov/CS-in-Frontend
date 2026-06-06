@@ -20,6 +20,8 @@ class Memory {
 
     if (options && options.stack && typeof options.stack === 'number') {
       this.STACK = new Stack(this.#arrayBuffer, options.stack)
+      console.log('Params ', this.#arrayBuffer, options.stack, this.size)
+      this.HEAP = new Heap(this.#arrayBuffer, options.stack, this.size)
     }
   }
 
@@ -146,6 +148,67 @@ class PointerStack {
   }
 }
 
+class Heap {
+  #buffer
+  #startPointer
+  #endMemory
+  #dataView
+  #freeBlocks = []
+
+  constructor(buffer, startPointer, endMemory) {
+    this.#buffer = buffer
+    this.#startPointer = startPointer
+    this.#endMemory = endMemory
+
+    // Збесь на первом этапе мы записываем всю память что нам позволяют взять
+    this.#dataView = new DataView(buffer, startPointer, endMemory - startPointer)
+    const firstFreeBlock = new HeapFreeBlock(startPointer, endMemory - startPointer)
+    this.#freeBlocks.push(firstFreeBlock)
+  }
+  
+  get freeBlocks () {
+    return this.#freeBlocks
+  }
+  
+  alloc (size) {
+    // TODO Находить только первый свободный блок и изменять только его
+    let myMemory = null
+    this.#freeBlocks = this.#freeBlocks.map((item, index) => {
+      if (item.size > size) {
+        myMemory = new Uint8Array(this.#buffer, item.startPointer, size)
+        return new HeapFreeBlock(item.startPointer + size, item.size - size)
+      }
+      return new HeapFreeBlock(item.startPointer, item.size)
+    })
+    return myMemory
+  }
+}
+
+class HeapFreeBlock {
+  #startPointer
+  #size
+
+  get startPointer () {
+    return this.#startPointer
+  }
+  
+  get size () {
+    return this.#size
+  }
+  
+  constructor(startPointer, size) {
+    this.#startPointer = startPointer
+    this.#size = size
+  }
+  
+  get freeBlock () {
+    return {
+      startPointer: this.#startPointer,
+      size: this.#size
+    }
+  }
+}
+
 const arrayBuffer1 = new Uint32Array([1234567]);
 const arrayBuffer2 = new Uint8Array([10,20,30,40]);
 const arrayBuffer3 = new Uint16Array([555, 444]);
@@ -155,6 +218,13 @@ const arrayBuffer5 = new Uint16Array([441]);
 const memory = new Memory(10 * 1024, { stack: 1024 });
 
 const p1 = memory.push(arrayBuffer1);
+
+console.log('Heap ', memory.HEAP.freeBlocks);
+const testAlloc = memory.HEAP.alloc(100)
+console.log('testAlloc', testAlloc)
+console.log('free blocks', memory.HEAP.freeBlocks)
+
+
 
 
 // ============================================
