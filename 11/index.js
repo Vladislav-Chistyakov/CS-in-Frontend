@@ -27,6 +27,10 @@ class Memory {
     return this.STACK.push(buffer)
   }
 
+  pop () {
+    return this.STACK.pop()
+  }
+
   get bufferStack () {
     return this.STACK.bufferStack
   }
@@ -74,6 +78,10 @@ class Stack {
     return new PointerStack(this.#buffer, startPointer, newBuffer.length, arrayBuffer.constructor, arrayLength)
   }
   
+  pop() {
+    console.log('Pointer ', this.pointer)
+  }
+  
   get bufferStack () {
     return this.#buffer
   }
@@ -119,8 +127,9 @@ const p1 = memory.push(new Uint32Array([1234567]));
 const p2 = memory.push(arrayBuffer3);
 console.log(p1.deref());
 console.log(p2.deref());
-console.log(p2.change(arrayBuffer5));
-console.log(p2.deref());
+console.log(memory.pop())
+// console.log(p2.change(arrayBuffer5));
+// console.log(p2.deref());
 
 
 
