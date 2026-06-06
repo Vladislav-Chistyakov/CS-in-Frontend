@@ -41,6 +41,7 @@ class Stack {
   #buffer
   #dataView
   #endMemory
+  #arrayPointers = []
 
   get view () {
     return this.#dataView
@@ -72,14 +73,24 @@ class Stack {
     // Перезаписали указатель, он ссылка на пустое место в нашем буффере для следующей записи
     this.#pointer = this.#pointer + newBuffer.byteLength
 
+    // Дает понять сколько элементов в массиве
     const arrayLength = newBuffer.length / bytePerElement 
     
-    // Отдали указатель на начало
-    return new PointerStack(this.#buffer, startPointer, newBuffer.length, arrayBuffer.constructor, arrayLength)
+    // Создали элемент стэка
+    const ptr = new PointerStack(this.#buffer, startPointer, newBuffer.length, arrayBuffer.constructor, arrayLength)
+    // Записали в массив элементов стэка
+    this.#arrayPointers.push(ptr)
+    
+    // Вернули последний элемент
+    return ptr
   }
   
   pop() {
-    console.log('Pointer ', this.pointer)
+    console.log('this.#arrayPointers ', this.#arrayPointers)
+    const lastPointer = this.#arrayPointers.pop()
+    this.#pointer = this.#pointer - lastPointer.bufferLength
+    lastPointer.pop()
+    console.log('lastPointer ', this.#buffer)
   }
   
   get bufferStack () {
@@ -93,6 +104,14 @@ class PointerStack {
   #bufferLength
   #TypeArray
   #length
+  #released = false
+  
+  get bufferLength () {
+    if (this.#released) {
+      throw new Error('Error - this element removed')
+    }
+    return this.#bufferLength
+  }
   
   constructor(buffer, pointerStart, bufferLength, TypeArray, length) {
     this.#buffer = buffer
@@ -103,6 +122,10 @@ class PointerStack {
   }
   
   change(buffer) {
+    if (this.#released) {
+      throw new Error('Error - this element removed')
+    }
+    
     const newArray = new this.#TypeArray(buffer.buffer)
     const source = new this.#TypeArray(this.#buffer, this.#pointerStart, this.#length)
     for (let i = 0; i < this.#length; i++) {
@@ -111,7 +134,15 @@ class PointerStack {
   }
   
   deref() {
+    if (this.#released) {
+      throw new Error('Error - this element removed')
+    }
     return new this.#TypeArray(this.#buffer.slice(this.#pointerStart, this.#pointerStart + this.#bufferLength)) 
+  }
+  
+  pop () {
+    this.#released = true
+    new this.#TypeArray(this.#buffer, this.#pointerStart, this.#length).fill(0)
   }
 }
 
@@ -123,14 +154,7 @@ const arrayBuffer5 = new Uint16Array([441]);
 
 const memory = new Memory(10 * 1024, { stack: 1024 });
 
-const p1 = memory.push(new Uint32Array([1234567]));
-const p2 = memory.push(arrayBuffer3);
-console.log(p1.deref());
-console.log(p2.deref());
-console.log(memory.pop())
-// console.log(p2.change(arrayBuffer5));
-// console.log(p2.deref());
-
+const p1 = memory.push(arrayBuffer1);
 
 
 // ============================================
