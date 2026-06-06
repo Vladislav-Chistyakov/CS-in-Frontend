@@ -2,7 +2,6 @@
 // Из них 10 КБ резервируется под стек, остальное — под кучу
 
 
-
 class Memory {
   #arrayBuffer
   size = 0
@@ -13,7 +12,7 @@ class Memory {
   constructor(memory, options) {
     this.#arrayBuffer = new ArrayBuffer(memory);
     this.size = memory;
-    
+
     this.dataView = new DataView(this.#arrayBuffer)
 
     this.dataView.setUint8(0, 3)
@@ -25,15 +24,15 @@ class Memory {
     }
   }
 
-  push (buffer) {
+  push(buffer) {
     return this.STACK.push(buffer)
   }
 
-  pop () {
+  pop() {
     return this.STACK.pop()
   }
 
-  get bufferStack () {
+  get bufferStack() {
     return this.STACK.bufferStack
   }
 }
@@ -45,11 +44,11 @@ class Stack {
   #endMemory
   #arrayPointers = []
 
-  get view () {
+  get view() {
     return this.#dataView
   }
 
-  get pointer () {
+  get pointer() {
     return this.#pointer
   }
 
@@ -61,32 +60,32 @@ class Stack {
     this.#endMemory = endMemory
   }
 
-  push (arrayBuffer) {
+  push(arrayBuffer) {
     const bytePerElement = arrayBuffer.BYTES_PER_ELEMENT
     const oldBuffer = new Uint8Array(this.#buffer, this.#pointer)
     const newBuffer = new Uint8Array(arrayBuffer.buffer)
-    
+
     // TODO вернуть указатель на первый байт
     oldBuffer.set(newBuffer)
-    
+
     // сохранить его
     const startPointer = this.#pointer
-    
+
     // Перезаписали указатель, он ссылка на пустое место в нашем буффере для следующей записи
     this.#pointer = this.#pointer + newBuffer.byteLength
 
     // Дает понять сколько элементов в массиве
-    const arrayLength = newBuffer.length / bytePerElement 
-    
+    const arrayLength = newBuffer.length / bytePerElement
+
     // Создали элемент стэка
     const ptr = new PointerStack(this.#buffer, startPointer, newBuffer.length, arrayBuffer.constructor, arrayLength)
     // Записали в массив элементов стэка
     this.#arrayPointers.push(ptr)
-    
+
     // Вернули последний элемент
     return ptr
   }
-  
+
   pop() {
     console.log('this.#arrayPointers ', this.#arrayPointers)
     const lastPointer = this.#arrayPointers.pop()
@@ -94,8 +93,8 @@ class Stack {
     lastPointer.pop()
     console.log('lastPointer ', this.#buffer)
   }
-  
-  get bufferStack () {
+
+  get bufferStack() {
     return this.#buffer
   }
 }
@@ -107,14 +106,14 @@ class PointerStack {
   #TypeArray
   #length
   #released = false
-  
-  get bufferLength () {
+
+  get bufferLength() {
     if (this.#released) {
       throw new Error('Error - this element removed')
     }
     return this.#bufferLength
   }
-  
+
   constructor(buffer, pointerStart, bufferLength, TypeArray, length) {
     this.#buffer = buffer
     this.#pointerStart = pointerStart
@@ -122,27 +121,27 @@ class PointerStack {
     this.#TypeArray = TypeArray
     this.#length = length
   }
-  
+
   change(buffer) {
     if (this.#released) {
       throw new Error('Error - this element removed')
     }
-    
+
     const newArray = new this.#TypeArray(buffer.buffer)
     const source = new this.#TypeArray(this.#buffer, this.#pointerStart, this.#length)
     for (let i = 0; i < this.#length; i++) {
       source[i] = !!newArray[i] ? newArray[i] : 0
     }
   }
-  
+
   deref() {
     if (this.#released) {
       throw new Error('Error - this element removed')
     }
-    return new this.#TypeArray(this.#buffer.slice(this.#pointerStart, this.#pointerStart + this.#bufferLength)) 
+    return new this.#TypeArray(this.#buffer.slice(this.#pointerStart, this.#pointerStart + this.#bufferLength))
   }
-  
-  pop () {
+
+  pop() {
     this.#released = true
     new this.#TypeArray(this.#buffer, this.#pointerStart, this.#length).fill(0)
   }
@@ -165,22 +164,92 @@ class Heap {
     const firstFreeBlock = new HeapFreeBlock(startPointer, endMemory - startPointer)
     this.#freeBlocks.push(firstFreeBlock)
   }
-  
-  get freeBlocks () {
+
+  get freeBlocks() {
     return this.#freeBlocks
   }
-  
-  alloc (size) {
-    // TODO Находить только первый свободный блок и изменять только его
+
+  alloc(size) {
     let myMemory = null
-    this.#freeBlocks = this.#freeBlocks.map((item, index) => {
-      if (item.size > size) {
-        myMemory = new Uint8Array(this.#buffer, item.startPointer, size)
-        return new HeapFreeBlock(item.startPointer + size, item.size - size)
+    let freeBlockIndex = 0
+
+    const firstFreeBlock = this.#freeBlocks.find((item, index) => {
+      if (item.size >= size) {
+        freeBlockIndex = index
+        myMemory = new HeapPoint(this.#buffer, item.startPointer, size, (start, size) => this.free(start, size))
+        return true
       }
-      return new HeapFreeBlock(item.startPointer, item.size)
+      return false
     })
+
+    if (!!firstFreeBlock) {
+      if (firstFreeBlock.size - size === 0) {
+        this.#freeBlocks.splice(freeBlockIndex, 1)
+      } else {
+        this.#freeBlocks[freeBlockIndex] = new HeapFreeBlock(firstFreeBlock.startPointer + size, firstFreeBlock.size - size)
+      }
+    }
+    
+    if (memory === null) {
+      throw new Error('Memory not found')
+    }
+
     return myMemory
+  }
+  
+  free(startPointer, memorySize) {
+    // TODO Закончить free
+    // после сортировки сделать merge данных и соединить
+    const newFreeBlock = new HeapFreeBlock(startPointer, memorySize)
+    this.#freeBlocks.push(newFreeBlock)
+
+    this.#freeBlocks.sort((a, b) => a.startPointer - b.startPointer)
+    
+    const newFreeBlocks = []
+
+    console.log('Я вызвался', this.#freeBlocks)
+  }
+}
+
+class HeapPoint {
+  #buffer
+  #startPointer
+  #memorySize
+  #TypeArray
+  #released = false
+  #freeFunction
+  
+  constructor(buffer, startPointer, memorySize, freeFunction) {
+    this.#buffer = buffer
+    this.#startPointer = startPointer
+    this.#memorySize = memorySize
+    this.#freeFunction = freeFunction
+  }
+  
+  change(buffer) {
+    if (this.#released) {
+      throw new Error('Error - this element is free')
+    }
+    
+    this.#TypeArray = buffer.constructor
+    const BYTE_PER_ELEMENT = buffer.BYTES_PER_ELEMENT
+    const maxLength = this.#memorySize / BYTE_PER_ELEMENT
+    
+    const newArray = new this.#TypeArray(buffer.buffer)
+    const source = new this.#TypeArray(this.#buffer, this.#startPointer, maxLength)
+    
+    for (let i = 0; i < maxLength; i++) {
+      source[i] = !!newArray[i] ? newArray[i] : 0
+    }
+  }
+  
+  free() {
+    if (this.#released) {
+      throw new Error('Error: double free detected')
+    }
+    this.#released = true
+    
+    this.#freeFunction(this.#startPointer, this.#memorySize)
   }
 }
 
@@ -188,20 +257,20 @@ class HeapFreeBlock {
   #startPointer
   #size
 
-  get startPointer () {
+  get startPointer() {
     return this.#startPointer
   }
-  
-  get size () {
+
+  get size() {
     return this.#size
   }
-  
+
   constructor(startPointer, size) {
     this.#startPointer = startPointer
     this.#size = size
   }
-  
-  get freeBlock () {
+
+  get freeBlock() {
     return {
       startPointer: this.#startPointer,
       size: this.#size
@@ -210,21 +279,23 @@ class HeapFreeBlock {
 }
 
 const arrayBuffer1 = new Uint32Array([1234567]);
-const arrayBuffer2 = new Uint8Array([10,20,30,40]);
+const arrayBuffer2 = new Uint8Array([10, 20, 30, 40]);
 const arrayBuffer3 = new Uint16Array([555, 444]);
-const arrayBuffer4 = new Uint8Array([1,2]);
+const arrayBuffer4 = new Uint8Array([1, 2]);
 const arrayBuffer5 = new Uint16Array([441]);
 
-const memory = new Memory(10 * 1024, { stack: 1024 });
+const memory = new Memory(10 * 1024, {stack: 1024});
 
 const p1 = memory.push(arrayBuffer1);
 
 console.log('Heap ', memory.HEAP.freeBlocks);
-const testAlloc = memory.HEAP.alloc(100)
-console.log('testAlloc', testAlloc)
+const firstElement = memory.HEAP.alloc(100)
+const secondElement = memory.HEAP.alloc(200)
+const thirdElement = memory.HEAP.alloc(300)
+console.log('firstElement', firstElement.free())
+// console.log('secondElement', secondElement.free())
+console.log('thirdElement', thirdElement.free())
 console.log('free blocks', memory.HEAP.freeBlocks)
-
-
 
 
 // ============================================
