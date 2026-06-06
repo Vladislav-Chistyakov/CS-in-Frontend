@@ -55,6 +55,7 @@ class Stack {
   }
 
   push (arrayBuffer) {
+    const bytePerElement = arrayBuffer.BYTES_PER_ELEMENT
     const oldBuffer = new Uint8Array(this.#buffer, this.#pointer)
     const newBuffer = new Uint8Array(arrayBuffer.buffer)
     
@@ -66,9 +67,11 @@ class Stack {
     
     // Перезаписали указатель, он ссылка на пустое место в нашем буффере для следующей записи
     this.#pointer = this.#pointer + newBuffer.byteLength
+
+    const arrayLength = newBuffer.length / bytePerElement 
     
     // Отдали указатель на начало
-    return new PointerStack(this.#buffer, startPointer, newBuffer.length, arrayBuffer.constructor)
+    return new PointerStack(this.#buffer, startPointer, newBuffer.length, arrayBuffer.constructor, arrayLength)
   }
   
   get bufferStack () {
@@ -81,12 +84,22 @@ class PointerStack {
   #pointerStart
   #bufferLength
   #TypeArray
+  #length
   
-  constructor(buffer, pointerStart, bufferLength, TypeArray) {
+  constructor(buffer, pointerStart, bufferLength, TypeArray, length) {
     this.#buffer = buffer
     this.#pointerStart = pointerStart
     this.#bufferLength = bufferLength
     this.#TypeArray = TypeArray
+    this.#length = length
+  }
+  
+  change(buffer) {
+    const newArray = new this.#TypeArray(buffer.buffer)
+    const source = new this.#TypeArray(this.#buffer, this.#pointerStart, this.#length)
+    for (let i = 0; i < this.#length; i++) {
+      source[i] = !!newArray[i] ? newArray[i] : 0
+    }
   }
   
   deref() {
@@ -95,15 +108,18 @@ class PointerStack {
 }
 
 const arrayBuffer1 = new Uint32Array([1234567]);
-const arrayBuffer2 = new Uint8Array([1, 2, 3, 4, 5]);
-const arrayBuffer3 = new Uint16Array([17, 9]);
-const arrayBuffer4 = new Uint8Array([8, 9, 7, 5]);
+const arrayBuffer2 = new Uint8Array([10,20,30,40]);
+const arrayBuffer3 = new Uint16Array([555, 444]);
+const arrayBuffer4 = new Uint8Array([1,2]);
+const arrayBuffer5 = new Uint16Array([441]);
 
 const memory = new Memory(10 * 1024, { stack: 1024 });
 
 const p1 = memory.push(new Uint32Array([1234567]));
-const p2 = memory.push(new Uint8Array([1, 2, 3, 4, 5]));
+const p2 = memory.push(arrayBuffer3);
 console.log(p1.deref());
+console.log(p2.deref());
+console.log(p2.change(arrayBuffer5));
 console.log(p2.deref());
 
 
