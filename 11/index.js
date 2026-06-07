@@ -109,7 +109,7 @@ class PointerStack {
 
   get bufferLength() {
     if (this.#released) {
-      throw new Error('Error - this element removed')
+      throw new Error('this element removed')
     }
     return this.#bufferLength
   }
@@ -124,7 +124,7 @@ class PointerStack {
 
   change(buffer) {
     if (this.#released) {
-      throw new Error('Error - this element removed')
+      throw new Error('this element removed')
     }
 
     const newArray = new this.#TypeArray(buffer.buffer)
@@ -136,7 +136,7 @@ class PointerStack {
 
   deref() {
     if (this.#released) {
-      throw new Error('Error - this element removed')
+      throw new Error('this element removed')
     }
     return new this.#TypeArray(this.#buffer.slice(this.#pointerStart, this.#pointerStart + this.#bufferLength))
   }
@@ -189,25 +189,51 @@ class Heap {
         this.#freeBlocks[freeBlockIndex] = new HeapFreeBlock(firstFreeBlock.startPointer + size, firstFreeBlock.size - size)
       }
     }
-    
-    if (memory === null) {
+
+    if (myMemory === null) {
       throw new Error('Memory not found')
     }
 
     return myMemory
   }
-  
+
+  mergeFreeBlocks(freeBlocksArray) {
+    const mergedFreeBlocks = []
+
+    // Проверяем что есть возможность соединить блоки
+    if (freeBlocksArray.length <= 1) {
+      return freeBlocksArray
+    }
+
+    // Запускаем цикл объединения
+    for (let i = 0; i < freeBlocksArray.length; i++) {
+      if (!!freeBlocksArray[i + 1] && freeBlocksArray[i].startPointer + freeBlocksArray[i].size === freeBlocksArray[i + 1].startPointer) {
+        mergedFreeBlocks.push(new HeapFreeBlock(freeBlocksArray[i].startPointer, freeBlocksArray[i].size + freeBlocksArray[i + 1].size))
+        i++
+      } else {
+        mergedFreeBlocks.push(freeBlocksArray[i])
+      }
+    }
+    
+    // Проверяем, если прошлый массив и новый одинаковый, просто врзвращаем старый массив
+    if (mergedFreeBlocks.length === freeBlocksArray.length) {
+      return freeBlocksArray
+    } else {
+      // Иначе запускаем рекурсию с целью получить объедененный массив
+      return this.mergeFreeBlocks(mergedFreeBlocks)
+    }
+  }
+
   free(startPointer, memorySize) {
-    // TODO Закончить free
     // после сортировки сделать merge данных и соединить
     const newFreeBlock = new HeapFreeBlock(startPointer, memorySize)
     this.#freeBlocks.push(newFreeBlock)
 
+    // Сортируем массива для мержка блоков, сортировка по началу указателя
     this.#freeBlocks.sort((a, b) => a.startPointer - b.startPointer)
-    
-    const newFreeBlocks = []
 
-    console.log('Я вызвался', this.#freeBlocks)
+    // Получаем лбъедененные блоки если была возможность их объединить
+    this.#freeBlocks = this.mergeFreeBlocks(this.#freeBlocks)
   }
 }
 
@@ -218,37 +244,50 @@ class HeapPoint {
   #TypeArray
   #released = false
   #freeFunction
-  
+  #maxLength = 0
+  #length = 0
+
   constructor(buffer, startPointer, memorySize, freeFunction) {
     this.#buffer = buffer
     this.#startPointer = startPointer
     this.#memorySize = memorySize
     this.#freeFunction = freeFunction
   }
-  
+
   change(buffer) {
     if (this.#released) {
-      throw new Error('Error - this element is free')
+      throw new Error('this element is free')
     }
     
     this.#TypeArray = buffer.constructor
     const BYTE_PER_ELEMENT = buffer.BYTES_PER_ELEMENT
-    const maxLength = this.#memorySize / BYTE_PER_ELEMENT
-    
+    this.#maxLength = this.#memorySize / BYTE_PER_ELEMENT
+    this.#length = buffer.byteLength / buffer.BYTES_PER_ELEMENT
+
     const newArray = new this.#TypeArray(buffer.buffer)
-    const source = new this.#TypeArray(this.#buffer, this.#startPointer, maxLength)
-    
-    for (let i = 0; i < maxLength; i++) {
+    const source = new this.#TypeArray(this.#buffer, this.#startPointer, this.#maxLength)
+
+    for (let i = 0; i < this.#maxLength; i++) {
       source[i] = !!newArray[i] ? newArray[i] : 0
     }
   }
   
+  deref() {
+    if (!this.#TypeArray) {
+      throw Error('deref element is empty')
+    }
+    if (this.#released) {
+      throw Error('deref element is free')
+    }
+    return new this.#TypeArray(this.#buffer, this.#startPointer, this.#length)
+  }
+
   free() {
     if (this.#released) {
-      throw new Error('Error: double free detected')
+      throw new Error('double free detected')
     }
     this.#released = true
-    
+
     this.#freeFunction(this.#startPointer, this.#memorySize)
   }
 }
@@ -292,10 +331,21 @@ console.log('Heap ', memory.HEAP.freeBlocks);
 const firstElement = memory.HEAP.alloc(100)
 const secondElement = memory.HEAP.alloc(200)
 const thirdElement = memory.HEAP.alloc(300)
-console.log('firstElement', firstElement.free())
-// console.log('secondElement', secondElement.free())
-console.log('thirdElement', thirdElement.free())
-console.log('free blocks', memory.HEAP.freeBlocks)
+// console.log('firstElement', firstElement.free())
+// // console.log('secondElement', secondElement.free())
+// console.log('secondElement', secondElement.change(arrayBuffer3))
+// console.log('secondElement', secondElement.deref())
+// console.log('thirdElement', thirdElement.free())
+// console.log('free blocks', memory.HEAP.freeBlocks)
+const ptr = memory.HEAP.alloc(100)
+
+ptr.change(new Uint16Array([555, 444]))
+
+console.log(ptr.deref())
+
+ptr.free()
+
+ptr.free()
 
 
 // ============================================
