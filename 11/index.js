@@ -19,7 +19,6 @@ class Memory {
 
     if (options && options.stack && typeof options.stack === 'number') {
       this.STACK = new Stack(this.#arrayBuffer, options.stack)
-      console.log('Params ', this.#arrayBuffer, options.stack, this.size)
       this.HEAP = new Heap(this.#arrayBuffer, options.stack, this.size)
     }
   }
@@ -87,11 +86,9 @@ class Stack {
   }
 
   pop() {
-    console.log('this.#arrayPointers ', this.#arrayPointers)
     const lastPointer = this.#arrayPointers.pop()
     this.#pointer = this.#pointer - lastPointer.bufferLength
     lastPointer.pop()
-    console.log('lastPointer ', this.#buffer)
   }
 
   get bufferStack() {
@@ -327,16 +324,10 @@ const memory = new Memory(10 * 1024, {stack: 1024});
 
 const p1 = memory.push(arrayBuffer1);
 
-console.log('Heap ', memory.HEAP.freeBlocks);
 const firstElement = memory.HEAP.alloc(100)
 const secondElement = memory.HEAP.alloc(200)
 const thirdElement = memory.HEAP.alloc(300)
-// console.log('firstElement', firstElement.free())
-// // console.log('secondElement', secondElement.free())
-// console.log('secondElement', secondElement.change(arrayBuffer3))
-// console.log('secondElement', secondElement.deref())
-// console.log('thirdElement', thirdElement.free())
-// console.log('free blocks', memory.HEAP.freeBlocks)
+
 const ptr = memory.HEAP.alloc(100)
 
 ptr.change(new Uint16Array([555, 444]))
@@ -347,26 +338,3 @@ ptr.free()
 
 ptr.free()
 
-
-// ============================================
-//  Работа со стеком (LIFO)
-// ============================================
-
-// Добавляем данные в стек
-// Возвращает указатель на первый байт сохранённых данных
-// const pointer1 = mem.push(arrayBuffer1);
-
-// Добавляем ещё один блок в стек (ляжет поверх предыдущего)
-// mem.push(arrayBuffer2);
-
-// Извлекаем значение по указателю (без удаления из стека)
-// console.log(pointer1.deref()); // arrayBuffer1
-
-// Изменяем данные по указателю (заменяем содержимое)
-// pointer1.change(arrayBuffer3);
-
-// Удаляем последний добавленный блок из стека (LIFO)
-// mem.pop(); // удаляет arrayBuffer2
-
-// Удаляем следующий блок (теперь верхним стал arrayBuffer3)
-// mem.pop(); // удаляет arrayBuffer3
