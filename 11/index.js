@@ -1,7 +1,3 @@
-// Общий размер памяти — 100 КБ
-// Из них 10 КБ резервируется под стек, остальное — под кучу
-
-
 class Memory {
   #arrayBuffer
   size = 0
@@ -140,7 +136,8 @@ class PointerStack {
 
   pop() {
     this.#released = true
-    new this.#TypeArray(this.#buffer, this.#pointerStart, this.#length).fill(0)
+    const BYTES_PER_ELEMENT = this.#TypeArray.BYTES_PER_ELEMENT
+    new Uint8Array(this.#buffer, this.#pointerStart, this.#length * BYTES_PER_ELEMENT).fill(0)
   }
 }
 
