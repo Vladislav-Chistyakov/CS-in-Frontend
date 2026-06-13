@@ -73,7 +73,7 @@ class Stack {
     const arrayLength = newBuffer.length / bytePerElement
 
     // Создали элемент стэка
-    const ptr = new PointerStack(this.#buffer, startPointer, newBuffer.length, arrayBuffer.constructor, arrayLength)
+    const ptr = new PointerStack(this.#buffer, startPointer, newBuffer.length, arrayBuffer.constructor, arrayLength, () => this.pop())
     // Записали в массив элементов стэка
     this.#arrayPointers.push(ptr)
 
@@ -83,8 +83,9 @@ class Stack {
 
   pop() {
     const lastPointer = this.#arrayPointers.pop()
+    const countBytesInLastPointer = lastPointer.typedArray.BYTES_PER_ELEMENT * lastPointer.length
     this.#pointer = this.#pointer - lastPointer.bufferLength
-    lastPointer.pop()
+    new Uint8Array(this.#buffer, lastPointer.pointerStart, countBytesInLastPointer)
   }
 
   get bufferStack() {
@@ -99,6 +100,20 @@ class PointerStack {
   #TypeArray
   #length
   #released = false
+  #popFunction
+
+  get #TypeArray () {
+    return this.#TypeArray
+  }
+  get #buffer () {
+    return this.#buffer
+  }
+  get #pointerStart () {
+    return this.#pointerStart
+  }
+  get #length () {
+    return this.#length
+  }
 
   get bufferLength() {
     if (this.#released) {
@@ -107,12 +122,13 @@ class PointerStack {
     return this.#bufferLength
   }
 
-  constructor(buffer, pointerStart, bufferLength, TypeArray, length) {
+  constructor(buffer, pointerStart, bufferLength, TypeArray, length,popFunction) {
     this.#buffer = buffer
     this.#pointerStart = pointerStart
     this.#bufferLength = bufferLength
     this.#TypeArray = TypeArray
     this.#length = length
+    this.#popFunction = popFunction
   }
 
   change(buffer) {
@@ -135,9 +151,12 @@ class PointerStack {
   }
 
   pop() {
-    this.#released = true
-    const BYTES_PER_ELEMENT = this.#TypeArray.BYTES_PER_ELEMENT
-    new Uint8Array(this.#buffer, this.#pointerStart, this.#length * BYTES_PER_ELEMENT).fill(0)
+    if (this.#released) {
+      throw new Error('this element removed')
+    } else {
+      this.#popFunction()
+      this.#released = true
+    }
   }
 }
 

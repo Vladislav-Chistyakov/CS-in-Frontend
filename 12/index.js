@@ -72,12 +72,13 @@ class Stack {
     const arrayLength = newBuffer.length / bytePerElement
 
     // Создали элемент стэка
-    const ptr = new PointerStack(this.#buffer,
+    const ptr = new PointerStack(
+      this.#buffer,
       startPointer,
       newBuffer.length,
       arrayBuffer.constructor,
       arrayLength,
-      (start, size) => this.pop()
+      (offset, countBytes) => this.popPointer(offset, countBytes)
     )
     // Записали в массив элементов стэка
     this.#arrayPointers.push(ptr)
@@ -87,9 +88,16 @@ class Stack {
   }
 
   pop() {
+    const lastPointer = this.#arrayPointers.length ? this.#arrayPointers[this.#arrayPointers.length - 1] : null
+    if (lastPointer) {
+      lastPointer.pop()
+    }
+  }
+
+  popPointer(offset, countBytes) {
     const lastPointer = this.#arrayPointers.pop()
     this.#pointer = this.#pointer - lastPointer.bufferLength
-    lastPointer.pop()
+    new Uint8Array(this.#buffer, offset, countBytes).fill(0)
   }
 
   get bufferStack() {
@@ -104,6 +112,7 @@ class PointerStack {
   #TypeArray
   #length
   #released = false
+  #popFunction
 
   get bufferLength() {
     if (this.#released) {
@@ -134,6 +143,7 @@ class PointerStack {
     this.#bufferLength = bufferLength
     this.#TypeArray = TypeArray
     this.#length = length
+    this.#popFunction = popFunction
   }
 
   change(buffer) {
@@ -156,9 +166,17 @@ class PointerStack {
   }
 
   pop() {
-    this.#released = true
-    const BYTES_PER_ELEMENT = this.#TypeArray.BYTES_PER_ELEMENT
-    new Uint8Array(this.#buffer, this.#pointerStart, this.#length * BYTES_PER_ELEMENT).fill(0)
+    if (this.#released) {
+      throw new Error('this element removed')
+    } else {
+      this.#popFunction(this.#pointerStart, this.#TypeArray.BYTES_PER_ELEMENT + this.#length)
+      this.#released = true
+    }
+  }
+
+  [Symbol.dispose]() {
+    if (this.#released) return
+    this.pop()
   }
 }
 
@@ -169,10 +187,6 @@ class Heap {
   #dataView
   #freeBlocks = []
   
-  get freeBlocks () {
-    return this.#freeBlocks
-  }
-
   constructor(buffer, startPointer, endMemory) {
     this.#buffer = buffer
     this.#startPointer = startPointer
@@ -344,11 +358,11 @@ class HeapFreeBlock {
 
 const memory = new Memory(10 * 1024, {stack: 1024});
 
-using p1 = memory.HEAP.alloc(100);
-const p2 = memory.push(new Uint8Array([1, 2, 3]));
-const p3 = memory.push(new Uint8Array([4, 5, 6]));
-const p4 = memory.push(new Uint32Array([32193, 44444124, 12391489]));
+console.log('A. pointer до:', memory.STACK.pointer)
 
-console.log('clear pf ', memory.STACK.pop())
+{
+  using sp = memory.push(new Uint8Array([10, 20, 30]))
+  console.log('B. pointer внутри:', memory.STACK.pointer)
+}
 
-console.log('TEST p4 ', p4)
+console.log('C. pointer после:', memory.STACK.pointer)
