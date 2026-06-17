@@ -356,13 +356,28 @@ class HeapFreeBlock {
   }
 }
 
-const memory = new Memory(10 * 1024, {stack: 1024});
+class Rc {
+  #pointer
+  #counter
 
-console.log('A. pointer до:', memory.STACK.pointer)
+  constructor(pointer) {
+    this.#pointer = pointer
+  }
 
-{
-  using sp = memory.push(new Uint8Array([10, 20, 30]))
-  console.log('B. pointer внутри:', memory.STACK.pointer)
+  deref () {
+    return this.#pointer.deref()
+  }
+
+  change (data) {
+    this.#pointer.change(data)
+  }
 }
 
-console.log('C. pointer после:', memory.STACK.pointer)
+const memory = new Memory(10 * 1024, {stack: 1024});
+
+const raw = memory.HEAP.alloc(8)
+const rc = new Rc(raw)
+
+rc.change(new Uint8Array([1, 2, 3]))
+console.log('через Rc:', rc.deref())
+// должно быть Uint8Array(8) [1, 2, 3, 0, 0, 0, 0, 0]
