@@ -35,7 +35,7 @@ class HashMap {
     const element = this.getElementByKey(key)
     
     if (!element) {
-      this.#storage[this.#length] = new HashElement(key, value)
+      this.#storage[this.#length] = new HashElement(key, value, this.#length)
       this.#length++
     } else {
       element.setValue(value)
@@ -44,11 +44,13 @@ class HashMap {
 
 
   get (key) {
-    return this.getElementByKey(key).getValue(key)
+    const element = this.getElementByKey(key)
+    return !element ? undefined : element.getValue() 
   }
 
   has (key) {
-    return this.getElementByKey(key).hasKey(key)
+    const element = this.getElementByKey(key)
+    return !!element
   }
   
   delete (key) {
@@ -59,13 +61,34 @@ class HashMap {
       return undefined
     }
     
+    
     const valueElement = element.getValue(key)
     this.#storage[element.index] = null
-    this.#storage = this.#storage.filter(item => !!item)
-    this.#length--
-    for (let i = this.#length; i < this.#maxLength; i++) {
-      this.#storage[i] = null
+    let flag = false
+    
+    for (let index = 0; index < this.#maxLength; index ++) {
+      // Флаг показывает, что удаление с перезаписью произошло
+      if (flag) {
+        this.#storage[index] = this.#storage[index + 1]
+        if (this.#storage[index]) {
+          this.#storage[index].index = index
+        }
+        continue
+      }
+      
+      // Удаление еще не произошло, оно происходит тут
+      if (index + 1 !== this.#maxLength && this.#storage[index] === null && this.#storage[index + 1]) {
+        this.#storage[index] = this.#storage[index + 1]
+        this.#storage[index].index = index
+        flag = true
+      }
+      
     }
+    
+    console.log('this storage ', this.#storage)
+    
+    this.#length--
+
     return valueElement
   }
   
@@ -82,15 +105,23 @@ class HashMap {
 class HashElement {
   #key
   #value
+  #index = -1
 
-  constructor(key, value) {
+  constructor(key, value, index) {
     this.#key = key
     this.#value = value
+    this.#index = index
+  }
+  
+  get index () {
+    return this.#index
   }
 
-  getValue (key) {
-    if (this.#key !== key) return false
+  set index (value) {
+    this.#index = value
+  }
 
+  getValue () {
     return this.#value
   }
   
