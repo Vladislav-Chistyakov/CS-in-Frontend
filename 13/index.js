@@ -17,16 +17,10 @@ class HashMap {
     return true
   }
   
-  checkHasKeyInHashMap (key) {
+  getElementByKey (key) {
     for (let i = 0; i < this.#length; i++) {
-      if (this.#storage[i].checkIsHasKey(key)) {
-        const element = this.#storage[i];
-        return {
-          get: element.getValueInKey(key),
-          has: element.checkIsHasKey(key),
-          element: element,
-          index: i
-        }
+      if (this.#storage[i].hasKey(key)) {
+        return this.#storage[i];
       }
     }
     return undefined
@@ -37,40 +31,46 @@ class HashMap {
       return
     }
     
-    const element = this.checkHasKeyInHashMap(key)?.element
+    // Вызываю чтобы получить элемент
+    const element = this.getElementByKey(key)
     
     if (!element) {
       this.#storage[this.#length] = new HashElement(key, value)
       this.#length++
     } else {
-      element.set(value)
+      element.setValue(value)
     }
   }
 
 
   get (key) {
-    return this.checkHasKeyInHashMap(key)?.get
+    return this.getElementByKey(key).getValue(key)
   }
 
   has (key) {
-    return !!this.checkHasKeyInHashMap(key)
+    return this.getElementByKey(key).hasKey(key)
   }
   
   delete (key) {
-    const element = this.checkHasKeyInHashMap(key)
+    // Просто нужен элемент (has, get, index)
+    const element = this.getElementByKey(key)
     
-    const valueElement = element.get
-    
-    if (element.has) {
-      this.#storage[element.index] = null
-      this.#storage = this.#storage.filter(item => !!item)
-      this.#length--
-      for (let i = this.#length; i < 120; i++) {
-        this.#storage[i] = null
-      }
-      return valueElement
+    if (!element) {
+      return undefined
     }
-    return undefined
+    
+    const valueElement = element.getValue(key)
+    this.#storage[element.index] = null
+    this.#storage = this.#storage.filter(item => !!item)
+    this.#length--
+    for (let i = this.#length; i < this.#maxLength; i++) {
+      this.#storage[i] = null
+    }
+    return valueElement
+  }
+  
+  get storage () {
+    return this.#storage
   }
 
   // TODO ключами могут быть приметивы. так и объекты
@@ -88,29 +88,34 @@ class HashElement {
     this.#value = value
   }
 
-  getValueInKey (key) {
+  getValue (key) {
     if (this.#key !== key) return false
 
     return this.#value
   }
   
-  set (value) {
+  setValue (value) {
     this.#value = value
   }
 
-  checkIsHasKey (key) {
+  hasKey (key) {
     return this.#key === key
   }
 }
 
 
-const map = new HashMap(120)
+const map = new HashMap(100)
 map.set("foo", 1)
 map.set("foo", 99)                  // обновление
 map.set("zero", 0)
+map.set(2, 2)
+map.set('3', 3)
 console.log(map.get("foo"))         // 99
 console.log(map.get("zero"))        // 0  ← главный тест
 console.log(map.delete("foo"))      // 99
 console.log(map.has("foo"))         // false
+console.log(map.storage)
+console.log(map.delete(2))
+console.log(map.storage)
 // console.log(map.delete(document)); // 10
 // console.log(map.has(document));    // false
