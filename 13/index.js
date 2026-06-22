@@ -7,6 +7,33 @@ class HashMap {
     this.#storage = new Array(lengthHashMap).fill(null);
     this.#maxLength = lengthHashMap;
   }
+  
+  hashFunction (key) {
+    const typeKey = typeof key
+    const maxLength = this.#maxLength
+    
+    function createIndexFromNumber () {
+      return key % maxLength
+    }
+
+    function createIndexFromString () {
+      return key.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0) % maxLength
+    }
+    
+    switch (typeKey) {
+      case "number":
+        return createIndexFromNumber()
+      case "string":
+        return createIndexFromString()
+      case "undefined":
+      case "object":
+      case "boolean":
+      case "function":
+      case "symbol":
+      case "bigint":
+        throw new Error("I can't create index for hash map.")
+    }
+  }
 
   checkForCompleteness () {
     if ((this.#length / this.#maxLength).toFixed(2) >= 0.65) {
@@ -18,11 +45,11 @@ class HashMap {
   }
   
   getElementByKey (key) {
-    for (let i = 0; i < this.#length; i++) {
-      if (this.#storage[i].hasKey(key)) {
-        return this.#storage[i];
-      }
+    const index = this.hashFunction(key)
+    if (this.#storage[index]) {
+      return this.#storage[index]
     }
+
     return undefined
   }
 
@@ -31,26 +58,31 @@ class HashMap {
       return
     }
     
-    // Вызываю чтобы получить элемент
-    const element = this.getElementByKey(key)
+    const hashKey = this.hashFunction(key)
     
-    if (!element) {
-      this.#storage[this.#length] = new HashElement(key, value, this.#length)
-      this.#length++
+    
+    if (!this.#storage[hashKey]) {
+      this.#storage[hashKey] = [new HashElement(key, value)] 
     } else {
-      element.setValue(value)
+      const searchElement = this.#storage[hashKey].find((item) => item.hasKey(key))
+      if (searchElement) {
+        searchElement.setValue(value)
+      } else {
+        this.#storage[hashKey].push(new HashElement(key, value))
+      }
     }
   }
 
 
   get (key) {
-    const element = this.getElementByKey(key)
-    return !element ? undefined : element.getValue() 
+    const arrayElements = this.getElementByKey(key)
+    const searchElement = arrayElements.find((item) => item.hasKey(key))
+    return !searchElement ? undefined : searchElement.getValue() 
   }
 
   has (key) {
-    const element = this.getElementByKey(key)
-    return !!element
+    const arrayElements = this.getElementByKey(key)
+    return !!arrayElements.find((item) => item.hasKey(key))
   }
   
   delete (key) {
@@ -60,34 +92,10 @@ class HashMap {
     if (!element) {
       return undefined
     }
-    
-    
+
     const valueElement = element.getValue(key)
-    this.#storage[element.index] = null
-    let flag = false
     
-    for (let index = 0; index < this.#maxLength; index ++) {
-      // Флаг показывает, что удаление с перезаписью произошло
-      if (flag) {
-        this.#storage[index] = this.#storage[index + 1]
-        if (this.#storage[index]) {
-          this.#storage[index].index = index
-        }
-        continue
-      }
-      
-      // Удаление еще не произошло, оно происходит тут
-      if (index + 1 !== this.#maxLength && this.#storage[index] === null && this.#storage[index + 1]) {
-        this.#storage[index] = this.#storage[index + 1]
-        this.#storage[index].index = index
-        flag = true
-      }
-      
-    }
-    
-    console.log('this storage ', this.#storage)
-    
-    this.#length--
+    this.#storage[this.hashFunction(key)] = null
 
     return valueElement
   }
@@ -95,32 +103,24 @@ class HashMap {
   get storage () {
     return this.#storage
   }
-
-  // TODO ключами могут быть приметивы. так и объекты
-  // Можно взять любой алгоритм хэш функции
-  // Коллизии можно решать через метод цепочек
-  // Хэш-таблица должна поддерживать расширение внутреннего буфера.
+  
+  
+  // Так так так
+  // индекс хэш элемента это 
+  // num =(полученный ключ в виде числа, надо его еще в число привести)
+  // num % maxLength = допустим будет 42
+  // index нашего элемента в хэш таблице будет = 42
 }
 
 class HashElement {
   #key
   #value
-  #index = -1
 
-  constructor(key, value, index) {
+  constructor(key, value) {
     this.#key = key
     this.#value = value
-    this.#index = index
   }
   
-  get index () {
-    return this.#index
-  }
-
-  set index (value) {
-    this.#index = value
-  }
-
   getValue () {
     return this.#value
   }
@@ -136,17 +136,12 @@ class HashElement {
 
 
 const map = new HashMap(100)
-map.set("foo", 1)
-map.set("foo", 99)                  // обновление
-map.set("zero", 0)
-map.set(2, 2)
-map.set('3', 3)
-console.log(map.get("foo"))         // 99
-console.log(map.get("zero"))        // 0  ← главный тест
-console.log(map.delete("foo"))      // 99
-console.log(map.has("foo"))         // false
-console.log(map.storage)
-console.log(map.delete(2))
-console.log(map.storage)
-// console.log(map.delete(document)); // 10
-// console.log(map.has(document));    // false
+map.set("foo", 99)
+map.set('ofo', 10)
+map.set("foo", 88)
+console.log(map.get("foo"))    // 99
+// console.log(map.get(42))       // 10
+console.log(map.get("ofo"))    // true
+// console.log(map.delete(42))    // 10
+// console.log(map.has(42))       // false
+console.log('hash ', map.storage)
