@@ -76,28 +76,42 @@ class HashMap {
 
   get (key) {
     const arrayElements = this.getElementByKey(key)
+    if (!arrayElements) {
+      return undefined
+    }
     const searchElement = arrayElements.find((item) => item.hasKey(key))
     return !searchElement ? undefined : searchElement.getValue() 
   }
 
   has (key) {
     const arrayElements = this.getElementByKey(key)
+    if (!arrayElements) {
+      return undefined
+    }
     return !!arrayElements.find((item) => item.hasKey(key))
   }
   
   delete (key) {
-    // Просто нужен элемент (has, get, index)
-    const element = this.getElementByKey(key)
+    const arrayElements = this.getElementByKey(key)
     
-    if (!element) {
+    if (!arrayElements) {
       return undefined
     }
 
-    const valueElement = element.getValue(key)
+    const element = arrayElements.find((item, index) => item.hasKey(key))
+    const needIndex = arrayElements.findIndex((item, index) => item.hasKey(key))
     
-    this.#storage[this.hashFunction(key)] = null
+    const value = element.getValue(key)
+    
+    const hashKey = this.hashFunction(key)
+    
+    this.#storage[hashKey].splice(needIndex, 1)
+    
+    if (this.#storage[hashKey].length === 0) {
+      this.#storage[hashKey] = null
+    }
 
-    return valueElement
+    return value
   }
   
   get storage () {
@@ -137,11 +151,13 @@ class HashElement {
 
 const map = new HashMap(100)
 map.set("foo", 99)
-map.set('ofo', 10)
-map.set("foo", 88)
-console.log(map.get("foo"))    // 99
-// console.log(map.get(42))       // 10
-console.log(map.get("ofo"))    // true
-// console.log(map.delete(42))    // 10
+map.set('ofo', 10)     // ← коллизия! "ofo" и "foo" дают одинаковый char-code sum
+map.set("foo", 88)     // ← обновление, а не вставка
+
+console.log(map.get("foo"))   // ← вернёт 88 (не 99 как в комменте), потому что обновили
+
+console.log(map.delete("foo"))   // ← вернёт 88 (не 99 как в комменте), потому что обновили
+console.log(map.delete("ofo"))   // ← вернёт 88 (не 99 как в комменте), потому что обновили
+
 // console.log(map.has(42))       // false
 console.log('hash ', map.storage)
