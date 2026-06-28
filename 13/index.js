@@ -2,22 +2,39 @@ class HashMap {
   #storage
   #maxLength
   #length = 0
+  #wm = new WeakMap()
+  #countObject = 0
 
   constructor(lengthHashMap) {
     this.#storage = new Array(lengthHashMap).fill(null);
     this.#maxLength = lengthHashMap;
   }
-  
+
   hashFunction (key) {
     const typeKey = typeof key
     const maxLength = this.#maxLength
-    
+
     function createIndexFromNumber () {
       return key % maxLength
     }
 
+    function createIndexFromBoolean () {
+      return key ? 1 : 0 
+    }
+
     function createIndexFromString () {
       return key.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0) % maxLength
+    }
+
+    const createIndexFromObject = () => {
+      if (this.#wm.has(key)) {
+        return this.#wm.get(key)
+      } else {
+        this.#countObject++
+        const index = this.#countObject % maxLength
+        this.#wm.set(key, index)
+        return index
+      }
     }
     
     switch (typeKey) {
@@ -25,14 +42,30 @@ class HashMap {
         return createIndexFromNumber()
       case "string":
         return createIndexFromString()
-      case "undefined":
-      case "object":
       case "boolean":
+        return createIndexFromBoolean()
+      case "object":
       case "function":
+        return createIndexFromObject()
+      case "undefined":
       case "symbol":
       case "bigint":
         throw new Error("I can't create index for hash map.")
     }
+  }
+  
+  rehashing (key, value) {
+    const oldStorage = this.#storage.filter(item => item);
+    // Умножаем велечину стора в 2 раза
+    this.#maxLength = this.#maxLength * 2
+    
+    this.#storage = new Array(this.#maxLength).fill(null);
+    
+    this.#length = 0
+    
+    oldStorage.flat().forEach(item => this.set(item.key, item.value))
+    
+    this.set(key, value)
   }
 
   checkForCompleteness () {
@@ -55,6 +88,7 @@ class HashMap {
 
   set (key, value) {
     if (!this.checkForCompleteness()) {
+      this.rehashing(key, value)
       return
     }
     
@@ -62,13 +96,15 @@ class HashMap {
     
     
     if (!this.#storage[hashKey]) {
-      this.#storage[hashKey] = [new HashElement(key, value)] 
+      this.#storage[hashKey] = [new HashElement(key, value)]
+      this.#length++
     } else {
       const searchElement = this.#storage[hashKey].find((item) => item.hasKey(key))
       if (searchElement) {
         searchElement.setValue(value)
       } else {
         this.#storage[hashKey].push(new HashElement(key, value))
+        this.#length++
       }
     }
   }
@@ -86,7 +122,7 @@ class HashMap {
   has (key) {
     const arrayElements = this.getElementByKey(key)
     if (!arrayElements) {
-      return undefined
+      return false
     }
     return !!arrayElements.find((item) => item.hasKey(key))
   }
@@ -110,6 +146,8 @@ class HashMap {
     if (this.#storage[hashKey].length === 0) {
       this.#storage[hashKey] = null
     }
+
+    this.#length--
 
     return value
   }
@@ -135,6 +173,14 @@ class HashElement {
     this.#value = value
   }
   
+  get key () {
+    return this.#key
+  }
+
+  get value () {
+    return this.#value
+  }
+  
   getValue () {
     return this.#value
   }
@@ -149,15 +195,28 @@ class HashElement {
 }
 
 
-const map = new HashMap(100)
+const map = new HashMap(10)
+const obj1 = {a: 1}
+const obj2 = {b: 2}
+
+// строки, числа, объекты
 map.set("foo", 99)
-map.set('ofo', 10)     // ← коллизия! "ofo" и "foo" дают одинаковый char-code sum
-map.set("foo", 88)     // ← обновление, а не вставка
+map.set(42, 10)
+map.set(obj1, "first")
+map.set(obj2, "second")
 
-console.log(map.get("foo"))   // ← вернёт 88 (не 99 как в комменте), потому что обновили
+console.log(map.get("foo"))      // 99
+console.log(map.get(42))         // 10
+console.log(map.get(obj1))       // "first"
+console.log(map.has(obj2))       // true
+console.log(map.delete(obj1))    // "first"
+console.log(map.has(obj1))       // false
 
-console.log(map.delete("foo"))   // ← вернёт 88 (не 99 как в комменте), потому что обновили
-console.log(map.delete("ofo"))   // ← вернёт 88 (не 99 как в комменте), потому что обновили
+// провокация для бага 1
+try {
+  map.set(undefined, 1)
+  console.log("✗ бага не словил — undefined прошёл")
+} catch (e) {
+  console.log("✓ бросилось:", e.message)
+}
 
-// console.log(map.has(42))       // false
-console.log('hash ', map.storage)
