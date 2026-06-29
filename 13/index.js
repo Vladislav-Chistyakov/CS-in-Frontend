@@ -94,17 +94,32 @@ class HashMap {
     
     const hashKey = this.hashFunction(key)
     
-    
     if (!this.#storage[hashKey]) {
-      this.#storage[hashKey] = [new HashElement(key, value)]
+      this.#storage[hashKey] = {
+        data: new HashElement(key, value),
+        next: null,
+      }
       this.#length++
     } else {
-      const searchElement = this.#storage[hashKey].find((item) => item.hasKey(key))
-      if (searchElement) {
-        searchElement.setValue(value)
-      } else {
-        this.#storage[hashKey].push(new HashElement(key, value))
-        this.#length++
+      let element = this.#storage[hashKey]
+      let isLastElement = false
+      
+      while (!isLastElement) {
+        if (element.data?.hasKey(key)) {
+          element.data.setValue(value)
+          break
+        } else {
+          if (element.next === null) {
+            isLastElement = true
+            element.next = {
+              data: new HashElement(key, value),
+              next: null,
+            }
+            this.#length++
+            break
+          }
+          element = element.next
+        }
       }
     }
   }
@@ -152,16 +167,41 @@ class HashMap {
     return value
   }
   
+  searchElement (key) {
+    const hashKey = this.hashFunction(key)
+
+
+    if (!this.#storage[hashKey]) {
+      return null
+    } else {
+      let element = this.#storage[hashKey]
+      let prevElement = null
+      let isLastElement = false
+
+      while (!isLastElement) {
+        if (element.data?.hasKey(key)) {
+          return {
+            prev: prevElement,
+            element: element.data 
+          }
+        } else {
+          if (element.next === null) {
+            return {
+              prev: prevElement,
+              element: null
+            }
+          }
+
+          prevElement = element
+          element = element.next
+        }
+      }
+    }
+  }
+  
   get storage () {
     return this.#storage
   }
-  
-  
-  // Так так так
-  // индекс хэш элемента это 
-  // num =(полученный ключ в виде числа, надо его еще в число привести)
-  // num % maxLength = допустим будет 42
-  // index нашего элемента в хэш таблице будет = 42
 }
 
 class HashElement {
@@ -201,18 +241,20 @@ const obj2 = {b: 2}
 
 // строки, числа, объекты
 map.set("foo", 99)
+map.set("oof", 2)
+map.set("ofo", 3)
 map.set(42, 10)
 map.set(obj1, "first")
 map.set(obj2, "second")
 
-console.log(map.get("foo"))      // 99
-console.log(map.get(42))         // 10
-console.log(map.get(obj1))       // "first"
-console.log(map.has(obj2))       // true
-console.log(map.delete(obj1))    // "first"
-console.log(map.has(obj1))       // false
+// console.log(map.get("foo"))
+// console.log(map.get(42))
+// console.log(map.get(obj1))
+// console.log(map.has(obj2))
+// console.log(map.delete(obj1))
+// console.log(map.has(obj1))
+console.log(map.storage)
 
-// провокация для бага 1
 try {
   map.set(undefined, 1)
   console.log("✗ бага не словил — undefined прошёл")
