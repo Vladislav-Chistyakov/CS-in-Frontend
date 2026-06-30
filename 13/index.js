@@ -76,15 +76,6 @@ class HashMap {
     console.log('Все нормально, данные можно записывать')
     return true
   }
-  
-  getElementByKey (key) {
-    const index = this.hashFunction(key)
-    if (this.#storage[index]) {
-      return this.#storage[index]
-    }
-
-    return undefined
-  }
 
   set (key, value) {
     if (!this.checkForCompleteness()) {
@@ -126,41 +117,32 @@ class HashMap {
 
 
   get (key) {
-    const arrayElements = this.getElementByKey(key)
-    if (!arrayElements) {
-      return undefined
-    }
-    const searchElement = arrayElements.find((item) => item.hasKey(key))
-    return !searchElement ? undefined : searchElement.getValue() 
+    const currentElement = this.searchElement(key)
+    return currentElement?.element?.data?.getValue()
   }
 
   has (key) {
-    const arrayElements = this.getElementByKey(key)
-    if (!arrayElements) {
-      return false
-    }
-    return !!arrayElements.find((item) => item.hasKey(key))
+    const currentElement = this.searchElement(key)
+    return !!currentElement?.element?.data?.hasKey(key)
   }
   
   delete (key) {
-    const arrayElements = this.getElementByKey(key)
+    const currentElement = this.searchElement(key)
     
-    if (!arrayElements) {
+    if (!currentElement?.element) {
       return undefined
     }
-
-    const element = arrayElements.find((item, index) => item.hasKey(key))
-    const needIndex = arrayElements.findIndex((item, index) => item.hasKey(key))
     
-    const value = element.getValue(key)
+    const value = currentElement?.element?.data?.getValue()
     
     const hashKey = this.hashFunction(key)
-    
-    this.#storage[hashKey].splice(needIndex, 1)
-    
-    if (this.#storage[hashKey].length === 0) {
-      this.#storage[hashKey] = null
+
+    if (currentElement.prev) {
+      currentElement.prev.next = currentElement.element.next 
+    } else {
+      this.#storage[hashKey] = currentElement.element.next
     }
+    
 
     this.#length--
 
@@ -182,7 +164,7 @@ class HashMap {
         if (element.data?.hasKey(key)) {
           return {
             prev: prevElement,
-            element: element.data 
+            element: element
           }
         } else {
           if (element.next === null) {
@@ -247,13 +229,23 @@ map.set(42, 10)
 map.set(obj1, "first")
 map.set(obj2, "second")
 
-// console.log(map.get("foo"))
-// console.log(map.get(42))
-// console.log(map.get(obj1))
-// console.log(map.has(obj2))
-// console.log(map.delete(obj1))
-// console.log(map.has(obj1))
+console.log(map.get("foo"))
+console.log(map.get(42))
+console.log(map.get(obj1))
+console.log(map.has(obj2))
+console.log(map.delete(obj1))
+console.log(map.delete('oof'))
 console.log(map.storage)
+console.log(map.has(obj1))
+console.log(map.storage)
+
+map.set("zero", 0)
+console.log(map.get("zero"))           // ожидаем 0, баг 1 даст undefined
+
+map.set("foo", 1)
+map.set("oof", 2)                       // в той же цепочке
+console.log(map.delete("never-was-here-but-bucket-not-empty"))
+// если хэш этого ключа совпадёт с хэшем "foo" — баг 2 → крах
 
 try {
   map.set(undefined, 1)
