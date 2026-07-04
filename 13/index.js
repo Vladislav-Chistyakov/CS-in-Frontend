@@ -2,8 +2,8 @@ class HashMap {
   #storage
   #maxLength
   #length = 0
-  #wm = new WeakMap()
   #countObject = 0
+  symb = Symbol('hashId')
 
   constructor(lengthHashMap) {
     this.#storage = new Array(lengthHashMap).fill(null);
@@ -26,15 +26,12 @@ class HashMap {
       return key.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0) % maxLength
     }
 
-    const createIndexFromObject = () => {
-      if (this.#wm.has(key)) {
-        return this.#wm.get(key)
-      } else {
+    const createIndexFromObject = (keyObj) => {
+      if (keyObj[this.symb] === undefined) {
+        keyObj[this.symb] = this.#countObject % maxLength
         this.#countObject++
-        const index = this.#countObject % maxLength
-        this.#wm.set(key, index)
-        return index
       }
+      return keyObj[key]
     }
     
     switch (typeKey) {
@@ -46,7 +43,7 @@ class HashMap {
         return createIndexFromBoolean()
       case "object":
       case "function":
-        return createIndexFromObject()
+        return createIndexFromObject(key)
       case "undefined":
       case "symbol":
       case "bigint":
@@ -70,10 +67,8 @@ class HashMap {
 
   checkForCompleteness () {
     if ((this.#length / this.#maxLength).toFixed(2) >= 0.65) {
-      console.log('Надо сделать перехеширование')
       return false
     }
-    console.log('Все нормально, данные можно записывать')
     return true
   }
 
@@ -217,31 +212,21 @@ class HashElement {
 }
 
 
-const map = new HashMap(5)
-const obj1 = {a: 1}
+const map = new HashMap(20)
+const obj1 = () => {a: 1}
 const obj2 = {b: 2}
 
 // строки, числа, объекты
 map.set("foo", 99)
 map.set("oof", 2)
-map.set("ofo", 3)
-map.set("123", 4)
-map.set("333", 5)
-map.set("444", 6)
-map.set("5", 7)
-map.set(42, 10)
 map.set(obj1, "first")
 map.set(obj2, "second")
 
 console.log(map.get("foo"))
 console.log(map.get(42))
+console.log(map.storage)
 console.log(map.get(obj1))
-console.log(map.has(obj2))
-console.log(map.delete(obj1))
-console.log(map.delete('oof'))
-console.log(map.storage)
 console.log(map.has(obj1))
-console.log(map.storage)
 
 map.set("zero", 0)
 console.log(map.get("zero"))           // ожидаем 0, баг 1 даст undefined
