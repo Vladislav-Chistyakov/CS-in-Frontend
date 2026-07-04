@@ -63,7 +63,7 @@ class HashMap {
     
     this.#length = 0
     
-    oldStorage.flat().forEach(item => this.set(item.key, item.value))
+    oldStorage.flat().forEach(item => this.set(item.data.key, item.data.value))
     
     this.set(key, value)
   }
@@ -217,7 +217,7 @@ class HashElement {
 }
 
 
-const map = new HashMap(10)
+const map = new HashMap(5)
 const obj1 = {a: 1}
 const obj2 = {b: 2}
 
@@ -225,6 +225,10 @@ const obj2 = {b: 2}
 map.set("foo", 99)
 map.set("oof", 2)
 map.set("ofo", 3)
+map.set("123", 4)
+map.set("333", 5)
+map.set("444", 6)
+map.set("5", 7)
 map.set(42, 10)
 map.set(obj1, "first")
 map.set(obj2, "second")
