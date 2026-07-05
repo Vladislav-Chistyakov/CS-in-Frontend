@@ -2,8 +2,7 @@ class HashMap {
   #storage
   #maxLength
   #length = 0
-  #countObject = 0
-  symb = Symbol('hashId')
+  #symb = Symbol('hashId')
 
   constructor(lengthHashMap) {
     this.#storage = new Array(lengthHashMap).fill(null);
@@ -27,11 +26,10 @@ class HashMap {
     }
 
     const createIndexFromObject = (keyObj) => {
-      if (keyObj[this.symb] === undefined) {
-        keyObj[this.symb] = this.#countObject % maxLength
-        this.#countObject++
+      if (keyObj[this.#symb] === undefined) {
+        keyObj[this.#symb] = Math.floor(Math.random() * 2 ** 32)
       }
-      return keyObj[key]
+      return keyObj[this.#symb] % maxLength
     }
     
     switch (typeKey) {
@@ -237,6 +235,7 @@ console.log(map.has(obj1))
 
 map.set("zero", 0)
 console.log(map.get("zero"))           // ожидаем 0, баг 1 даст undefined
+console.log(map.storage)
 
 map.set("foo", 1)
 map.set("oof", 2)                       // в той же цепочке
