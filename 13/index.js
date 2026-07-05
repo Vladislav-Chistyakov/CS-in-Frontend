@@ -1,54 +1,64 @@
+function hashFunction (key, maxLengthHashMap, symb) {
+  const typeKey = typeof key
+
+  function createIndexFromNumber () {
+    return key % maxLengthHashMap
+  }
+
+  function createIndexFromBoolean () {
+    return key ? 1 : 0
+  }
+
+  function createIndexFromString () {
+    return key.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0) % maxLengthHashMap
+  }
+
+  const createIndexFromObject = (keyObj) => {
+    if (keyObj[symb] === undefined) {
+      if (typeof keyObj.hashCode === 'function') {
+        return keyObj.hashCode() % maxLengthHashMap
+      } else {
+        keyObj[symb] = Math.floor(Math.random() * 2 ** 32)
+      }
+    }
+    return keyObj[symb] % maxLengthHashMap
+  }
+
+  switch (typeKey) {
+    case "number":
+      return createIndexFromNumber()
+    case "string":
+      return createIndexFromString()
+    case "boolean":
+      return createIndexFromBoolean()
+    case "object":
+    case "function":
+      return createIndexFromObject(key)
+    case "undefined":
+    case "symbol":
+    case "bigint":
+      throw new Error("I can't create index for hash map.")
+  }
+}
+
 class HashMap {
   #storage
   #maxLength
   #length = 0
   #symb = Symbol('hashId')
+  #hashFunction = null
+  
 
-  constructor(lengthHashMap) {
+  constructor(lengthHashMap, hashFunction) {
     this.#storage = new Array(lengthHashMap).fill(null);
     this.#maxLength = lengthHashMap;
-  }
-
-  hashFunction (key) {
-    const typeKey = typeof key
-    const maxLength = this.#maxLength
-
-    function createIndexFromNumber () {
-      return key % maxLength
-    }
-
-    function createIndexFromBoolean () {
-      return key ? 1 : 0 
-    }
-
-    function createIndexFromString () {
-      return key.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0) % maxLength
-    }
-
-    const createIndexFromObject = (keyObj) => {
-      if (keyObj[this.#symb] === undefined) {
-        keyObj[this.#symb] = Math.floor(Math.random() * 2 ** 32)
-      }
-      return keyObj[this.#symb] % maxLength
-    }
-    
-    switch (typeKey) {
-      case "number":
-        return createIndexFromNumber()
-      case "string":
-        return createIndexFromString()
-      case "boolean":
-        return createIndexFromBoolean()
-      case "object":
-      case "function":
-        return createIndexFromObject(key)
-      case "undefined":
-      case "symbol":
-      case "bigint":
-        throw new Error("I can't create index for hash map.")
+    if (hashFunction && typeof hashFunction === 'function') {
+      this.#hashFunction = hashFunction
+    } else {
+      throw Error('Hashmap must have a hash function')
     }
   }
-  
+
   rehashing (key, value) {
     const oldStorage = this.#storage.filter(item => item);
     // Умножаем велечину стора в 2 раза
@@ -82,7 +92,7 @@ class HashMap {
       return
     }
     
-    const hashKey = this.hashFunction(key)
+    const hashKey = this.#hashFunction(key, this.#maxLength, this.#symb)
     
     if (!this.#storage[hashKey]) {
       this.#storage[hashKey] = {
@@ -134,7 +144,7 @@ class HashMap {
     
     const value = currentElement?.element?.data?.getValue()
     
-    const hashKey = this.hashFunction(key)
+    const hashKey = this.#hashFunction(key, this.#maxLength, this.#symb)
 
     if (currentElement.prev) {
       currentElement.prev.next = currentElement.element.next 
@@ -149,7 +159,7 @@ class HashMap {
   }
   
   searchElement (key) {
-    const hashKey = this.hashFunction(key)
+    const hashKey = this.#hashFunction(key, this.#maxLength, this.#symb)
 
 
     if (!this.#storage[hashKey]) {
@@ -183,7 +193,7 @@ class HashMap {
   get storage () {
     return this.#storage
   }
-}
+}``
 
 class HashElement {
   #key
@@ -216,7 +226,7 @@ class HashElement {
 }
 
 
-const map = new HashMap(7)
+const map = new HashMap(7, hashFunction)
 const obj1 = () => {a: 1}
 const obj2 = {b: 2}
 
