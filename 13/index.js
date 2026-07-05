@@ -60,7 +60,13 @@ class HashMap {
     
     this.#length = 0
     
-    oldStorage.flat().forEach(item => this.set(item.data.key, item.data.value))
+    oldStorage.flat().forEach(item => {
+      let current = item
+      while (current) {
+        this.set(current.data.key, current.data.value)
+        current = current.next
+      }
+    })
     
     this.set(key, value)
   }
@@ -212,13 +218,14 @@ class HashElement {
 }
 
 
-const map = new HashMap(20)
+const map = new HashMap(7)
 const obj1 = () => {a: 1}
 const obj2 = {b: 2}
 
 // строки, числа, объекты
 map.set("foo", 99)
 map.set("oof", 2)
+map.set("ofo", 32)
 map.set(obj1, "first")
 map.set(obj2, "second")
 
