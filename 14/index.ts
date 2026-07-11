@@ -1,5 +1,5 @@
 // Исходный массив должен быть отсортирован по возрасту
-const ages = [12, 42, 43, 55, 56];
+const ages = [12, 42, 42, 42, 56];
 
 const users = [
   { age: 12, name: 'Bob' },
@@ -9,92 +9,94 @@ const users = [
   { age: 56, name: 'Bill' }
 ];
 
-function indexOf<T> (arr: T[], searchElement: number, functionSearch?: Function) {
+function indexOf<T> (arr: T[], searchElement: number, functionSearch?: (item: T) => number) {
   let needIndex = -1
-  let startIteration = true
-  let takeElement = false
-  let count = 1
 
-  let left = false
-  let right = false
+  // Получаем number элемента T
+  const getValue = (item: T): number => functionSearch ? functionSearch(item) : (item as unknown as number)
 
-  function sliceDouble (arrSlice: T[], arrow: 'left' | 'right') { // дробим наш массив
-    if (arrow === 'left') {
-      left = true
-      right = false
-    } else {
-      left = false
-      right = true
-    }
-
-    const indexSlice = Math.floor(arrSlice.length / 2)
-    return left ? arrSlice.slice(0, indexSlice) : arrSlice.slice(indexSlice)
+  // У меня есть индексы самый левый и самый правый
+  let left = 0
+  let right = arr.length - 1
+  let center = Math.floor(right / 2)
+  const searchCenter = () => {
+    center = left + Math.floor((right - left) / 2)
   }
 
-  function checkElement (arr: T[]): T {
-    if (left) {
-      return arr[arr.length - 1]
+  let middle = arr
+
+  while (left <= right) {
+    searchCenter()
+    if (getValue(middle[center]) < searchElement) {
+      left = center + 1
+    } else if (getValue(middle[center]) > searchElement) {
+      right = center - 1
     } else {
-      return arr[0]
+      needIndex = center
+      right = center - 1
     }
-  }
-
-  let middle = arr // Середина слева
-
-  while (!takeElement) {
-    if (startIteration) {
-      // проверка больше не нужна
-      startIteration = false
-
-      // Находим середину в первой интерации
-      const sliceArr =  sliceDouble(arr, 'left')
-      // Если элемент поиска больше чем последний элемент слева,
-      // то нам надо брать середину справа
-      if (sliceArr[sliceArr.length - 1] < searchElement) {
-        left = false
-        right = true
-      }
-
-      // Записываем половину левую или правкую
-      middle = sliceDouble(arr, left ? 'left' : 'right')
-      continue
-    }
-
-    const index = middle.length - 1
-    const element = checkElement(middle)
-
-    if (element === searchElement) {
-      console.log('=== ', element, element === searchElement)
-      const currentValue: number = functionSearch ? functionSearch(element) : element as number
-      needIndex = element
-    } else if (element < searchElement) {
-      middle = sliceDouble(middle, 'right')
-      console.log(' < ', middle)
-    } else {
-      middle = sliceDouble(middle, 'left')
-      console.log(' >= ', middle)
-    }
-
-    if (index === 0 || index === arr.length - 1) {
-      takeElement = false
-      break
-    }
-
-    count++
   }
 
   return needIndex
 }
 
-console.log('indexOf ', indexOf(ages, 100))
-// // Поиск по массиву чисел
-// indexOf(ages, 42);     // 1
-// lastIndexOf(ages, 42); // 3
-//
-// // Поиск по массиву объектов (по полю age)
-// indexOf(users, 42, (item) => item.age);     // 1
-// lastIndexOf(users, 42, (item) => item.age); // 3
-//
-// // Не найдено
-// indexOf(ages, 100);     // -1
-// lastIndexOf(ages, 100); // -1
+function lastIndexOf<T> (arr: T[], searchElement: number, functionSearch?: (item: T) => number) {
+  let needIndex = -1
+
+  // Получаем number элемента T
+  const getValue = (item: T): number => functionSearch ? functionSearch(item) : (item as unknown as number)
+
+  // У меня есть индексы самый левый и самый правый
+  let left = 0
+  let right = arr.length - 1
+  let center = Math.floor(right / 2)
+  const searchCenter = () => {
+    center = left + Math.floor((right - left) / 2)
+  }
+
+  let middle = arr
+  let i = 0
+  while (left <= right && i < 3) {
+    i++
+    searchCenter()
+    if (getValue(middle[center]) < searchElement) {
+      left = center + 1
+    } else if (getValue(middle[center]) > searchElement) {
+      right = center - 1
+    } else {
+      needIndex = center
+      left = center + 1
+    }
+  }
+
+  return needIndex
+}
+
+
+const N = 100_00
+const arrForJob = new Array(N).fill(0)
+for (let i = 0; i < N; i++) { arrForJob[i] = i }
+
+
+
+const searchElement = 14567
+
+for (let i = 0; i < 10_000; i++) {
+  indexOf(arrForJob, searchElement)
+}
+
+let t1, t2
+t1 = performance.now()
+indexOf(arrForJob, searchElement)
+t2 = performance.now()
+console.log(`benchmark for my indexOf - `, t2 - t1)
+
+
+for (let i = 0; i < 10_000; i++) {
+  arrForJob.indexOf(searchElement)
+}
+t1 = performance.now()
+arrForJob.indexOf(searchElement)
+t2 = performance.now()
+console.log(`benchmark for default indexOf - `, t2 - t1)
+
