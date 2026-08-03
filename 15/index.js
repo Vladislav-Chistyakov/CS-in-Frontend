@@ -44,7 +44,7 @@ const matrix = new Matrix(Uint8Array, 10, 10);  // 10×10, значения 0-25
 
 class Graph {
   #matrix
-  #boundariesPassed = []
+  #boundariesPassed = new Set([])
   
   constructor(matrix) {
     this.#matrix = matrix
@@ -86,28 +86,20 @@ class Graph {
   }
 
   bypassingConnections (row, callback, countDepth) {
+    this.#boundariesPassed.add(row)
     // Цикл заканчивается когда мы прошлись по всему элементу, связи закончились
 
-    // TODO Переписать на set
-    for (let i = 0; i < this.#matrix.width; i++) {
-      // Если элемент вершины имеет связь с i то заходим
-      if (this.hasArc(row, i) && !this.checkItemBoundariesPassed(row)) {
-        console.log('ROW ', row, ' Col ', i)
-        this.#boundariesPassed.push(row)
+    console.log('this.#boundariesPassed', this.#boundariesPassed)
 
+    for (let i = 0; i < this.#matrix.width; i++) {
+      if (this.hasArc(row, i) && !this.#boundariesPassed.has(i)) {
         callback({ id: i, weight: this.#matrix.get(row, i)}, countDepth)
 
-        this.bypassingConnections(i, callback, countDepth + 1)
+        if (!this.#boundariesPassed.has(i)) {
+          this.bypassingConnections(i, callback, countDepth + 1)
+        }
       }
     }
-
-    // console.log('this.#boundariesPassed ', this.#boundariesPassed)
-  }
-
-  // Это функция для проверки элемента в BoundariesPassed
-  // Если элемент есть, то выводим правду, иначе лож
-  checkItemBoundariesPassed (row) {
-    return this.#boundariesPassed.some((item) => item === row)
   }
 }
 
