@@ -1,28 +1,43 @@
-## indexOf и lastIndexOf через бинарный поиск
+## Ассоциативный массив на основе бинарного дерева поиска
 
-Необходимо реализовать функции indexOf и lastIndexOf для отсортированного массива, используя бинарный поиск. Сравните полученную реализацию с нативной.
+Реализуйте класс TreeMap для создания ассоциативного массива (ключ → значение) на основе обычного бинарного дерева поиска (без балансировки).
 
 ```js
-// Исходный массив должен быть отсортирован по возрасту
-const ages = [12, 42, 42, 42, 56];
+const map = new TreeMap();
 
-const users = [
-  { age: 12, name: 'Bob' },
-  { age: 42, name: 'Ben' },
-  { age: 42, name: 'Jack' },
-  { age: 42, name: 'Sam' },
-  { age: 56, name: 'Bill' }
-];
+map.set("banana", 3);
+map.set("apple", 2);
+map.set("cherry", 5);
+map.set("date", 1);
 
-// Поиск по массиву чисел
-indexOf(ages, 42);     // 1
-lastIndexOf(ages, 42); // 3
+console.log(map.get("apple"));     // 2
+console.log(map.has("banana"));    // true
+console.log(map.keys());           // ["apple", "banana", "cherry", "date"]
 
-// Поиск по массиву объектов (по полю age)
-indexOf(users, 42, (item) => item.age);     // 1
-lastIndexOf(users, 42, (item) => item.age); // 3
+map.delete("cherry");
+console.log(map.entries());
+// [["apple", 2], ["banana", 3], ["date", 1]]
+```
 
-// Не найдено
-indexOf(ages, 100);     // -1
-lastIndexOf(ages, 100); // -1
+## Ассоциативный массив на бинарном дереве в плоском массиве
+
+Реализуйте класс ArrayTreeMap для создания ассоциативного массива на основе плоского массива, используя формулы для хранения узлов:
+
+- Левый потомок: `2 * i + 1`
+- Правый потомок: `2 * i + 2`
+- Родитель: `Math.floor((i - 1) / 2)`
+
+```js
+const map = new ArrayTreeMap(16); // Стартовая емкость
+
+map.set(10, "A");
+map.set(5, "B");
+map.set(15, "C");
+map.set(3, "D");
+map.set(7, "E");
+
+console.log(map.get(7));           // "E"
+console.log(map.keys());           // [3, 5, 7, 10, 15]
+console.log(map.getIndex(10));     // 0
+console.log(map.getIndex(7));      // 4
 ```

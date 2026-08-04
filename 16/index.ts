@@ -1,102 +1,48 @@
-// Исходный массив должен быть отсортирован по возрасту
-const ages = [12, 42, 42, 42, 56];
+// Ассоциативный массив на основе бинарного дерева поиска
+// Реализуйте класс TreeMap для создания ассоциативного массива (ключ → значение)
+// на основе обычного бинарного дерева поиска (без балансировки).
 
-const users = [
-  { age: 12, name: 'Bob' },
-  { age: 42, name: 'Ben' },
-  { age: 42, name: 'Jack' },
-  { age: 42, name: 'Sam' },
-  { age: 56, name: 'Bill' }
-];
+class TreeMap {
+  #arrayThree: [string, number][] = []
 
-function indexOf<T> (arr: T[], searchElement: number, functionSearch?: (item: T) => number) {
-  let needIndex = -1
-
-  // Получаем number элемента T
-  const getValue = (item: T): number => functionSearch ? functionSearch(item) : (item as unknown as number)
-
-  // У меня есть индексы самый левый и самый правый
-  let left = 0
-  let right = arr.length - 1
-  let center = Math.floor(right / 2)
-  const searchCenter = () => {
-    center = left + Math.floor((right - left) / 2)
+  constructor () {
   }
 
-  let middle = arr
-
-  while (left <= right) {
-    searchCenter()
-    if (getValue(middle[center]) < searchElement) {
-      left = center + 1
-    } else if (getValue(middle[center]) > searchElement) {
-      right = center - 1
-    } else {
-      needIndex = center
-      right = center - 1
-    }
+  set (key: string, value: number) {
+    const length = this.#arrayThree.length
+    this.#arrayThree[length] = [key, value]
   }
 
-  return needIndex
-}
-
-function lastIndexOf<T> (arr: T[], searchElement: number, functionSearch?: (item: T) => number) {
-  let needIndex = -1
-
-  // Получаем number элемента T
-  const getValue = (item: T): number => functionSearch ? functionSearch(item) : (item as unknown as number)
-
-  // У меня есть индексы самый левый и самый правый
-  let left = 0
-  let right = arr.length - 1
-  let center = Math.floor(right / 2)
-  const searchCenter = () => {
-    center = left + Math.floor((right - left) / 2)
+  getLastChild () {
+    return this.#arrayThree[this.#arrayThree.length - 1]
   }
 
-  let middle = arr
-  let i = 0
-  while (left <= right && i < 3) {
-    i++
-    searchCenter()
-    if (getValue(middle[center]) < searchElement) {
-      left = center + 1
-    } else if (getValue(middle[center]) > searchElement) {
-      right = center - 1
-    } else {
-      needIndex = center
-      left = center + 1
-    }
+  entries () {
+    return this.#arrayThree
   }
 
-  return needIndex
+  keys() {
+    return this.#arrayThree.map(item => item[0])
+  }
 }
 
+const map = new TreeMap();
 
-const N = 100_00
-const arrForJob = new Array(N).fill(0)
-for (let i = 0; i < N; i++) { arrForJob[i] = i }
+map.set("banana", 6);
+map.set("apple", 7);
+map.set("cherry", 8);
+map.set("date", 9);
+map.set("grape", 10);
+map.set("orange", 11);
+map.set("cherry", 4);
+map.set("juice", 5);
 
+console.log(map.entries());   // [["banana", 3], ["apple", 2], ["cherry", 5], ["date", 1]]
 
+// console.log(map.get("apple"));     // 2
+// console.log(map.has("banana"));    // true
+console.log(map.keys());           // ["apple", "banana", "cherry", "date"]
 
-const searchElement = 14567
-
-for (let i = 0; i < 10_000; i++) {
-  indexOf(arrForJob, searchElement)
-}
-
-let t1, t2
-t1 = performance.now()
-indexOf(arrForJob, searchElement)
-t2 = performance.now()
-console.log(`benchmark for my indexOf - `, t2 - t1)
-
-
-for (let i = 0; i < 10_000; i++) {
-  arrForJob.indexOf(searchElement)
-}
-t1 = performance.now()
-arrForJob.indexOf(searchElement)
-t2 = performance.now()
-console.log(`benchmark for default indexOf - `, t2 - t1)
-
+// map.delete("cherry");
+// console.log(map.entries());
+// [["apple", 2], ["banana", 3], ["date", 1]]
