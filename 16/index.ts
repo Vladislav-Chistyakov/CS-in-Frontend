@@ -3,26 +3,69 @@
 // на основе обычного бинарного дерева поиска (без балансировки).
 
 class TreeMap {
-  #arrayThree: [string, number][] = []
+  #root: TreeNode | null = null;
 
-  constructor () {
+  root () {
+    return this.#root;
   }
 
   set (key: string, value: number) {
-    const length = this.#arrayThree.length
-    this.#arrayThree[length] = [key, value]
+    if (!this.#root) {
+      this.#root = new TreeNode(key, value);
+      return
+    }
+
+    // Если root уже создан, то создаем ветку в дереве от корня
+    this.createNodeInBranch(key, value)
   }
 
-  getLastChild () {
-    return this.#arrayThree[this.#arrayThree.length - 1]
+  createNodeInBranch (key: string, value: number) {
+    if (!this.#root) {
+      return
+    }
+    this.#root.createNode(key, value)
   }
 
-  entries () {
-    return this.#arrayThree
+  iWantToKnowWhatWithThree () {
+    if (this.#root) {
+      console.log('getThreeNode', this.#root.getThreeNode())
+    }
+  }
+}
+
+class TreeNode {
+  #key: string = ''
+  #value: number | null = null
+  #left: TreeNode | null = null
+  #right: TreeNode | null = null
+
+  constructor(key: string, value: number) {
+    this.#key = key
+    this.#value = value
   }
 
-  keys() {
-    return this.#arrayThree.map(item => item[0])
+  createNode (key: string, value: number) {
+    if (this.#key > key) {
+      this.#left = new TreeNode(key, value)
+    } else {
+      this.#right = new TreeNode(key, value)
+    }
+  }
+
+  getThreeNode () {
+    return [this.#key, this.#value]
+  }
+
+  hasKey () {
+    return this.#key
+  }
+
+  hasLeft () {
+    return this.#left
+  }
+
+  hasRight () {
+    return this.#right
   }
 }
 
@@ -34,14 +77,14 @@ map.set("cherry", 8);
 map.set("date", 9);
 map.set("grape", 10);
 map.set("orange", 11);
-map.set("cherry", 4);
+map.set("strawberry", 4);
 map.set("juice", 5);
 
-console.log(map.entries());   // [["banana", 3], ["apple", 2], ["cherry", 5], ["date", 1]]
+console.log(map.iWantToKnowWhatWithThree());   // [["banana", 3], ["apple", 2], ["cherry", 5], ["date", 1]]
 
 // console.log(map.get("apple"));     // 2
 // console.log(map.has("banana"));    // true
-console.log(map.keys());           // ["apple", "banana", "cherry", "date"]
+// console.log(map.keys());           // ["apple", "banana", "cherry", "date"]
 
 // map.delete("cherry");
 // console.log(map.entries());
