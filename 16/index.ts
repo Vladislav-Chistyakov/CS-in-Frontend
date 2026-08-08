@@ -92,11 +92,41 @@ class TreeMap {
       }
     }
   }
+
+  keys () {
+    const array: string[] = []
+    if (!this.#root) {
+      return array
+    }
+
+    this.bsd(this.#root,(node: TreeNode) => { array.push(node.getKey()) })
+    return array
+  }
+
+  entries (): [string, number][] {
+    const array: [string, number][] = []
+    if (!this.#root) {
+      return array
+    }
+
+    this.bsd(this.#root,(node: TreeNode) => { array.push(node.getThreeNode()) })
+    return array
+  }
+
+  bsd (lastNode: TreeNode | null, callback: (node: TreeNode) => void) {
+    if (!lastNode) {
+      return
+    }
+
+    this.bsd(lastNode.getLeft(), callback)
+    callback(lastNode)
+    this.bsd(lastNode.getRight(), callback)
+  }
 }
 
 class TreeNode {
   #key: string = ''
-  #value: number | null = null
+  #value
   #left: TreeNode | null = null
   #right: TreeNode | null = null
 
@@ -113,7 +143,7 @@ class TreeNode {
     }
   }
 
-  getThreeNode () {
+  getThreeNode (): [string, number] {
     return [this.#key, this.#value]
   }
 
@@ -146,6 +176,7 @@ const map = new TreeMap();
 
 map.set("banana", 6);
 map.set("apple", 7);
+map.set("ananas", 7);
 map.set("cherry", 8);
 map.set("date", 9);
 map.set("grape", 10);
@@ -155,8 +186,8 @@ map.set("juice", 5);
 
 console.log(map.get("apple"));     // 7
 console.log(map.has("banana"));    // true
-// console.log(map.keys());           // ["apple", "banana", "cherry", "date"]
+console.log(map.keys());           // ["apple", "banana", "cherry", "date"]
 
 // map.delete("cherry");
-// console.log(map.entries());
+console.log(map.entries());
 // [["apple", 2], ["banana", 3], ["date", 1]]
