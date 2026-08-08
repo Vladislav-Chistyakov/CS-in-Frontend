@@ -74,6 +74,44 @@ class TreeMap {
     return { node: null, lastNode };
   }
 
+  delete (key: string): boolean {
+    const existed = this.has(key)
+    this.#root = this.#deleteNode(this.#root, key)
+    return existed
+  }
+
+// возвращает новый корень поддерева после удаления
+  #deleteNode (node: TreeNode | null, key: string): TreeNode | null {
+    if (!node) return null                         // не нашли — ничего не меняем
+
+    if (key < node.getKey()) {                     // искомое меньше → идём влево
+      node.setLeft(this.#deleteNode(node.getLeft(), key))
+      return node
+    }
+    if (key > node.getKey()) {                     // больше → вправо
+      node.setRight(this.#deleteNode(node.getRight(), key))
+      return node
+    }
+
+    // key === node.getKey() → это удаляемый узел, разбираем 3 случая:
+
+    if (!node.getLeft()) return node.getRight()    // нет левого → правый встаёт на место
+    if (!node.getRight()) return node.getLeft()    // нет правого → левый встаёт на место
+                                                   // (эти две строки покрывают и лист, и один ребёнок)
+
+    // два ребёнка: находим преемника = min правого поддерева
+    let succ = node.getRight()!
+    while (succ.getLeft()) succ = succ.getLeft()!
+
+    // копируем преемника в текущий узел (сам узел на месте, дети целы)
+    node.setKey(succ.getKey())
+    node.setValue(succ.getValue()!)
+
+    // удаляем преемника из правого поддерева (он лист/один ребёнок — простой случай)
+    node.setRight(this.#deleteNode(node.getRight(), succ.getKey()))
+    return node
+  }
+
   createNodeInBranch (lastNode: TreeNode, key: string, value: number) {
     if (lastNode.getKey() === key) {
       lastNode.setValue(value)
@@ -155,8 +193,20 @@ class TreeNode {
     return this.#right
   }
 
+  setLeft (node: TreeNode | null) {
+    this.#left = node
+  }
+
+  setRight (node: TreeNode | null) {
+    this.#right = node
+  }
+
   getKey () {
     return this.#key
+  }
+
+  setKey (key: string) {
+    this.#key = key
   }
 
   setValue (value: number) {
@@ -188,6 +238,6 @@ console.log(map.get("apple"));     // 7
 console.log(map.has("banana"));    // true
 console.log(map.keys());           // ["apple", "banana", "cherry", "date"]
 
-// map.delete("cherry");
+console.log(map.delete("cherry"));
 console.log(map.entries());
 // [["apple", 2], ["banana", 3], ["date", 1]]
