@@ -9,8 +9,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start:array": "npx tsx arrayTreeMap.ts",
-    "start:tree": "npx tsx treeMap.ts.ts"
+    "start": "npx tsx index.ts"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",
