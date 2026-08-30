@@ -135,3 +135,38 @@ console.log(isDigitsString(numEasternArabic))
 console.log(isDigitsString(numDevanagari))
 console.log(isDigitsString(numKhmer))
 console.log(isDigitsString(numChinese))
+
+function* iter (str: string) {
+  let smile = ''
+
+  for (let i = 0; i < str.length; i++) {
+    const charCode = str[i].charCodeAt(0);
+    const isHighSurrogate = charCode >= 0xD800 && charCode <= 0xDBFF;
+
+    if (isHighSurrogate || smile.length === 1) {
+      smile += str[i]
+      if (smile.length === 2) {
+        yield smile;
+        smile = ''
+      }
+    } else {
+      yield str[i];
+    }
+  }
+}
+
+const b = ['😅']
+const c = [...'😅']
+console.log('b ', b, b.length, b[0].length)
+console.log('c ', c, c.length, c[0].length)
+
+const s = 'a👨‍🍳'
+console.log(s.length)               // 6
+console.log(s.split(''))   // [ 'a', '\ud83d', '\udc68', '‍', '\ud83c', '\udf73' ]
+console.log([...s])                 // [ 'a', '👨', '‍', '🍳' ]
+console.log([...iter(s)])           // [ 'a', '👨', '‍', '🍳' ]
+
+
+
+
+
