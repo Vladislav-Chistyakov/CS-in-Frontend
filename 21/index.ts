@@ -1,44 +1,61 @@
-// ## Требования:
+// Сжатие строки
+// Необходимо написать функцию, которая принимала бы строку и
+// "схлопывала" бы все подряд идущие повторения.
+//   const myReplace = str.replace(regex, "");
+//   const regex = new RegExp(/(\w)\1*/g);
+// console.log(zipStr('abbaabbafffbezza')); // abafbeza
+
+
+// Hello, Bob! Your age is 10.
+// const res = format('Hello, ${user}! Your age is ${age}.', {user: 'Bob', age: 10});
 //
-// Локальная часть (до @): латинские буквы, цифры, точки, подчёркивания, дефисы
-// Домен (после @): латинские буквы, цифры, дефисы, точка
-// Доменная зона: от 2 до 6 букв (например, .com, .ru, .org)
-
-const emailRegex = /\w+@\w+\.\w{2,6}/;
-
-console.log(emailRegex.test("user@example.com"));   // true
-console.log(emailRegex.test("test@mail.ru"));       // true
-console.log(emailRegex.test("user123@domain.org")); // true
-console.log(emailRegex.test("@domain.org"));        // false
-console.log(emailRegex.test("invalid-email"));      // false
-console.log(emailRegex.test("user@.com"));          // false
-console.log(emailRegex.test("user@domain"));        // false
-console.log(emailRegex.test("user@domain.c"));      // false
-
-// Целые числа: 42, -5, 0
-// Числа с плавающей точкой: 3.14, -0.5, .5
-// Не должны захватывать числа внутри слов (например, version2 — не число)
-
-const numberRegex = /(-?\.?\b)(\d+(\.\d+)?)\b/g;
-const textNumber = "The price is 100.4 dollars, -0.51 .7 degrees, and version2 is out. 9123 02 8";
-
-const numbers = textNumber.match(numberRegex);
-console.log(numbers); // [ '100.4', '-0.51', '.7', '9123', '02', '8' ]
-
-
-// ## Необходимо написать регулярное выражение, которое находит все даты в формате DD.MM.YYYY или YYYY-MM-DD.
+// function format (text: string, params: object): string {
+//   const map = new Map()
+//   for (const [key, value] of Object.entries(params)) {
+//     map.set(key, value)
+//   }
 //
-//   Требования:
+//   const rex = new RegExp(/\$\{.+?}/g)
+//   const rexPattern = new RegExp(/[${}]/g)
 //
-// - Формат 1: 15.01.2025 (день.месяц.год)
-// - Формат 2: 2025-01-15 (год-месяц-день)
-// - День: 01–31, месяц: 01–12, год: 1900–2099
+//   return text.replace(rex, function (x) {
+//     const key = x.replace(rexPattern, "")
+//     if (map.has(key)) {
+//       return map.get(key)
+//     }
+//     return ""
+//   })
+// }
+//
+// console.log('RES ', res)
 
-const year = '(19|20)\\d{2}'
-const month = '(0[1-9]|1[0-2])'
-const day = '(3[01]|[12]\\d|0[1-9])'
-const dateRegex = new RegExp(`${day}\\.${month}\\.${year}|${year}-${month}-${day}`, 'g')
-const text = "Today is 15.01.2025 and tomorrow is 2025-01-16. Invalid: 32.13.2025";
 
-const dates = text.match(dateRegex);
-console.log(dates); // ["15.01.2025", "2025-01-16"]
+calc(`
+Какой-то текст (10 + 15 - 24) ** 2
+Еще какой то текст 2 * 10
+`) == `
+Какой-то текст 1
+Еще какой-то текст 20`
+
+function calc(text: string): string {
+  const mathPattern = new RegExp(/(\+|-|\*|\*\*|\/|%)/g)
+
+  const mathSymb = '( )?(\+|-|\*|\*\*|\/|%)( )?'
+
+
+  const ops = /(?:\+|-|\*\*?|\/|%)/; // символы операций (+, -, *, **, /, %)
+  const num = /\d+/;                 // числа
+  const space = /\s*/;               // возможные пробелы
+
+  const combinedOr = new RegExp(`(?:${num.source})|( ?:${ops.source} )`, 'g');
+
+  // const skobkiPattern = new RegExp(/\(\d+( (\+|-|\*|\*\*|\/|%) \d+)+\)()?( (\+|-|\*|\*\*|\/|%) \d+)+/g)
+  const skobkiPattern = new RegExp(/\(\d+( (\+|-|\*|\*\*|\/|%) \d+)+\)()?( (\+|-|\*|\*\*|\/|%) \d+)+/g)
+  console.log('check-pattern', text.replace(combinedOr, '_'))
+  return ''
+}
+
+const t = '2+4'
+console.log(Number(t))
+
+console.log(new Function('return (10 + 15 - 24) ** 2')())
