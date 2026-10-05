@@ -1,0 +1,19 @@
+{
+  "name": "5",
+  "version": "1.0.0",
+  "description": "> Цель задания: понять, как **представление данных в памяти** и **паттерн доступа** влияют на производительность.",
+  "keywords": [],
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "npx tsx index.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.2"
+  }
+}
