@@ -93,22 +93,33 @@ class RangeCode {
   }
 }
 
-const symbolRange = new RangeCode("a", "f");
-const numberRange = new RangeCode(-5, 1);
-
-// console.log(symbolRange.next())
-// console.log(symbolRange.next())
-// console.log(symbolRange.next())
-// console.log(symbolRange.next())
-// console.log(symbolRange.next())
-// console.log(symbolRange.next())
-// console.log(symbolRange.next())
-// console.log(symbolRange.next())
-
-console.log(Array.from(symbolRange)); // ["a", "b", "c", "d", "e", "f"]
-console.log(Array.from(numberRange.reverse())); //
-
+// const symbolRange = new RangeCode("a", "f");
 // const numberRange = new RangeCode(-5, 1);
 
-// console.log(Array.from(numberRange.reverse())); // [1, 0, -1, -2, -3, -4, -5]
+// console.log(Array.from(symbolRange)); // ["a", "b", "c", "d", "e", "f"]
+// console.log(Array.from(numberRange.reverse())); 1, 0, -1, -2, -3, -4, -5]
 
+function* querySelectorAllLazy(classElement: string, body: HTMLElement) {
+  let count = 0
+
+  const elements = body.querySelectorAll(classElement);
+
+  if (count === elements.length) {
+    return { value: undefined, done: true };
+  }
+
+  while (count + 1 !== elements.length) {
+    yield elements[count]
+    count++
+  }
+
+  return elements[count]
+}
+
+const iter = querySelectorAllLazy(".item", document.body);
+
+console.log(iter.next().value); // Первый элемент с классом .item
+console.log(iter.next().value); // Второй элемент
+console.log(iter.next().value); // Третий элемент
+console.log(iter.next().value); // Четверый элемент
+console.log(iter.next().value); // Последнего нет, undefined
