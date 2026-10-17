@@ -9,7 +9,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "npx tsx index.ts",
+    "start": "npx tsx index.js",
     "dev": "vite",
     "build": "vite build"
   },
