@@ -16,7 +16,7 @@ function random (min, max) {
 
 const randomInt = random(0, 100);
 
-function take (iterable, count) {
+export function take (iterable, count) {
   let indexes = count
 
   return Iterator.from({

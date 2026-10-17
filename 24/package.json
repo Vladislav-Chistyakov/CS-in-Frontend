@@ -6,10 +6,10 @@
   "license": "ISC",
   "author": "",
   "type": "commonjs",
-  "main": "index.js",
+  "main": "1.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "npx tsx index.js",
+    "start": "npx tsx 1.js",
     "dev": "vite",
     "build": "vite build"
   },
