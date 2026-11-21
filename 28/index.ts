@@ -47,3 +47,38 @@ const failed = new Result(() => { throw 'Boom!' })
 failed
   .then(data => console.log('Успех', data))
   .catch(err => console.log('Ошибка', err))
+
+function exec<T>(createIterator: () => Generator<Result<T>, void, T>) {
+  const iterator = createIterator()
+  const step = iterator.next()
+
+  function handlerStep(currentStep: IteratorResult<Result<T>>) {
+
+    if (!currentStep.done) {
+      currentStep.value
+        .then((data) => {
+          const nextStep = iterator.next(data)
+          handlerStep(nextStep)
+        })
+        .catch((err) => {
+          const nextStep = iterator.throw(err)
+          handlerStep(nextStep)
+        })
+    }
+  }
+
+  handlerStep(step)
+}
+
+function* demo(): Generator<Result<number>, void, number> {
+
+  console.log('Первый', yield result)
+  try {
+    console.log('Второй', yield failed)
+  } catch (e) {
+    console.error('eeee', e)
+  }
+  console.log('Третий', yield result)
+}
+
+exec(demo)
